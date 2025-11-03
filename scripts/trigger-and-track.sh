@@ -99,13 +99,25 @@ require_command jq
 require_command python3
 
 if [[ -z "${ref}" ]]; then
-  ref="$(git rev-parse --abbrev-ref HEAD)"
+  if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
+    ref="$(git rev-parse --abbrev-ref HEAD)"
+  else
+    ref="main"
+  fi
 fi
 
 repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 correlation_id="$(generate_uuid)"
 
 dispatch_epoch="$(date -u +%s)"
+
+workflow_id="$(gh api "repos/${repo}/actions/workflows/dispatch-webhook.yml" --jq '.id')"
+if [[ -z "${workflow_id}" ]]; then
+  echo "Failed to resolve workflow id for dispatch-webhook.yml" >&2
+  exit 1
+fi
+
+workflow_file="dispatch-webhook.yml"
 
 echo "Triggering workflow dispatch-webhook.yml on ${repo} (ref: ${ref})"
 echo "Generated correlation ID: ${correlation_id}"
@@ -114,49 +126,71 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
   echo "::warning::GITHUB_TOKEN is not set; gh CLI must already be authenticated."
 fi
 
-dispatch_output="$(gh workflow run dispatch-webhook.yml --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}")"
-echo "${dispatch_output}"
+dispatch_output=""
+if dispatch_output="$(gh workflow run dispatch-webhook.yml --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
+  echo "${dispatch_output}"
+else
+  if echo "${dispatch_output}" | grep -qi "not found"; then
+    echo "Filename dispatch failed (404). Retrying with workflow ID ${workflow_id}."
+    dispatch_output="$(gh workflow run "${workflow_id}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"
+    echo "${dispatch_output}"
+  else
+    echo "${dispatch_output}" >&2
+    exit 1
+  fi
+fi
 
-tmp_dir="$(mktemp -d)"
-trap 'rm -rf "${tmp_dir}"' EXIT
-
-start_time=$SECONDS
 found_run=""
+start_time=$SECONDS
+
+spinner_chars=$'|/-\\'
+spinner_index=0
+progress_message="Polling for workflow run"
+
+show_spinner() {
+  local elapsed=$(( SECONDS - start_time ))
+  local char=${spinner_chars:spinner_index:1}
+  printf '\r%s %s (elapsed %ss)' "${char}" "${progress_message}" "${elapsed}"
+  spinner_index=$(( (spinner_index + 1) % ${#spinner_chars} ))
+}
 
 while (( SECONDS - start_time < timeout )); do
-  mapfile -t candidates < <(
-    gh api "repos/${repo}/actions/workflows/dispatch-webhook.yml/runs" \
-      -F per_page=20 \
-      --jq '.workflow_runs[] | "\(.id) \(.head_branch) \(.created_at)"'
-  )
+  show_spinner
 
-  for candidate in "${candidates[@]}"; do
-    read -r run_id head_branch created_at <<<"${candidate}"
+  queued_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status queued --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
+  in_progress_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status in_progress --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
 
-    if [[ -z "${run_id}" ]]; then
-      continue
-    fi
+  [[ -z "${queued_json}" ]] && queued_json='[]'
+  [[ -z "${in_progress_json}" ]] && in_progress_json='[]'
 
-    created_epoch="$(parse_iso8601_to_epoch "${created_at}")"
-    if (( created_epoch < dispatch_epoch )); then
-      continue
-    fi
+  runs_json="$(printf '%s\n%s\n' "${queued_json}" "${in_progress_json}" | jq -s 'add' 2>/dev/null || echo '[]')"
 
-    if [[ "${head_branch}" != "${ref}" ]]; then
-      continue
-    fi
+  candidate_run_id="$(jq -r \
+    --arg cid "${correlation_id}" \
+    --arg branch "${ref}" \
+    --argjson dispatch "${dispatch_epoch}" \
+    'map(select(.headBranch == $branch) |
+         select((.createdAt | fromdateiso8601) >= $dispatch) |
+         select((.name // "") | contains($cid)))
+     | first | (.databaseId // empty)' <<<"${runs_json}" )"
 
-    log_file="${tmp_dir}/${run_id}.log"
-    if gh run view "${run_id}" --log >"${log_file}" 2>/dev/null; then
-      if grep -q "${correlation_id}" "${log_file}"; then
-        found_run="${run_id}"
-        break 2
-      fi
-    fi
-  done
+  run_count=$(jq 'length' <<<"${runs_json}" 2>/dev/null || echo 0)
+  [[ -z "${run_count}" ]] && run_count=0
+  progress_message="Polling for workflow run (active runs: ${run_count})"
+
+  if [[ -n "${candidate_run_id}" ]]; then
+    found_run="${candidate_run_id}"
+    break
+  fi
 
   sleep "${interval}"
 done
+
+printf '\r'
+
+if [[ -n "${found_run}" ]]; then
+  echo "Found workflow run ${found_run}"
+fi
 
 if [[ -z "${found_run}" ]]; then
   echo "Failed to correlate workflow run within ${timeout} seconds." >&2

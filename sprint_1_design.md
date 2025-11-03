@@ -1,7 +1,7 @@
 # Sprint 1 - design
 
 ## GH-2. Trigger GitHub workflow
-Status: Accepted
+Status: Implemented
 
 Description: User triggers GitHub Workflow that manifests its progress via webhooks with a basic retry policy that never blocks the endpoint. Workflow emits `Hello from <id>.<step>`.
 
@@ -17,7 +17,7 @@ Goal: Let the user trigger a GitHub Workflow that reports its progress through w
 - Place reusable shell logic under `scripts/` and make it idempotent, using `trap` to clean temporary files when writing payloads.
 
 ## GH-3. Workflow correlation
-Status: Accepted
+Status: Implemented
 
 Description: Triggering GitHub workflow returns “accepted” without a job identifier. Apply a best practice to obtain the GitHub workflow `id`, either by injecting data into the request or gathering it asynchronously.
 
@@ -25,10 +25,10 @@ Goal: Apply a best practice that surfaces the GitHub workflow run identifier aft
 
 - Extend operational tooling with a helper (`scripts/trigger-and-track.sh`) that:
   1. Accepts the webhook URL via CLI flag, `WEBHOOK_URL` env var, or interactive prompt, encouraging use of a dedicated `https://webhook.site/<your-id>` endpoint.
-  2. Generates a UUID correlation token and stores it locally.
-  3. Calls `gh workflow run dispatch-webhook.yml` with `webhook_url` and a temporary environment variable `CORRELATION_ID` so the webhook payload includes the token (handled inside the script, not as workflow input).
-  4. Polls `gh api repos/:owner/:repo/actions/workflows/dispatch-webhook.yml/runs --paginate --jq` filtering for runs created after the dispatch timestamp.
-  5. For each candidate run, fetch detailed run data (`actions/runs/{id}`) and read the job logs to locate the echoed correlation token.
+  2. Resolves the numeric workflow ID by calling `gh api repos/:owner/:repo/actions/workflows/dispatch-webhook.yml --jq '.id'` to avoid file-name cache issues.
+  3. Generates a UUID correlation token and stores it locally.
+  4. Attempts to dispatch via `gh workflow run dispatch-webhook.yml`; if GitHub responds with `404 Not Found`, retry with the numeric workflow ID. Both paths include `webhook_url` and `correlation_id` inputs so the webhook payload contains the token.
+  5. Polls `gh run list --workflow dispatch-webhook.yml --json databaseId,name,headBranch,createdAt,status` and uses `jq` (`fromdateiso8601`, branch match, `status` in `queued`/`in_progress`, run-name contains correlation token) to find the first run created after dispatch. Spinner feedback reports elapsed time and how many active runs were examined.
   6. Returns the resolved `run_id` and prints it to stdout as JSON `{ "run_id": <id>, "correlation_id": "<uuid>" }`.
 - Adjust `scripts/notify-webhook.sh` to include the correlation token when `CORRELATION_ID` is set, keeping backward compatibility if the variable is absent.
 - To support parallel triggers, the polling loop:

@@ -1,7 +1,7 @@
 # Sprint 1 - Implementation Notes
 
 ## GH-2. Trigger GitHub workflow
-Status: Progress
+Status: Implemented
 
 - Added workflow `.github/workflows/dispatch-webhook.yml`:
   - Triggered by `workflow_dispatch` and requires `webhook_url` input while accepting optional `correlation_id` (defaults empty for GH-2).
@@ -22,9 +22,10 @@ gh workflow run dispatch-webhook.yml --raw-field webhook_url=$WEBHOOK_URL
 - Both the workflow command and helper accept the webhook URL via CLI flag; `scripts/trigger-and-track.sh` also reads `WEBHOOK_URL` or interactively prompts, so operators can paste the full `https://webhook.site/<your-id>` endpoint.
 
 ## GH-3. Workflow correlation
-Status: Progress
+Status: Implemented
 
-- Added helper `scripts/trigger-and-track.sh` that generates a UUID correlation ID, sets `CORRELATION_ID` for the workflow run, and polls for the matching run by scanning workflow logs for the token.
+- Added helper `scripts/trigger-and-track.sh` that generates a UUID correlation ID, echoes the webhook URL, shows a spinner with elapsed time + active count, and repeatedly queries `gh run list --workflow dispatch-webhook.yml --json databaseId,name,headBranch,createdAt,status`, using `jq` (`fromdateiso8601`, branch match, status in `queued`/`in_progress`, run-name contains correlation token) to resolve the correct run without inspecting full logs.
+- Script resolves the workflow numeric ID before dispatching (via `gh api repos/:owner/:repo/actions/workflows/dispatch-webhook.yml --jq '.id'`) to prevent file-name related 404 responses, first attempts `gh workflow run dispatch-webhook.yml`, and retries with the numeric ID if GitHub still returns 404.
 - Script echoes the webhook URL in use so operators can double-check they pasted the intended `https://webhook.site/<your-id>` endpoint.
 - Correlation runs appear in the Actions list with `Dispatch Webhook (<correlation_id>)`, making manual inspection straightforward.
 - Polling limits:
@@ -47,11 +48,21 @@ scripts/trigger-and-track.sh --webhook-url $WEBHOOK_URL
 - `gh run view <run_id> --log` will contain both `Hello from <run_id>.dispatch` and the `correlationId` lines for manual tracing.
 
 ## Testing
-Status: Progress
+Status: Implemented
 
-- `actionlint` is not installed in this environment; run `actionlint` locally after prerequisites are in place to validate `.github/workflows/dispatch-webhook.yml`.
-- End-to-end test flow once tooling is installed:
-  1. Start a local webhook receiver (e.g., `npx http-echo-server 8080`) **or** obtain a public endpoint from https://webhook.site.
-  2. Execute `scripts/trigger-and-track.sh --webhook-url http://localhost:8080` (or use the copied `https://webhook.site/<your-id>`).
-  3. Inspect receiver logs (or the webhook.site dashboard) for the `Hello from <run_id>.notify` payload and confirm the script prints matching `run_id`.
-  4. Run the helper in parallel windows to verify the correlation filter handles concurrent executions.
+- Run lint and correlation tests via copy/paste commands:
+
+```bash
+# Lint workflow definitions
+actionlint
+
+# Correlation E2E (watches run to completion and validates run name)
+export WEBHOOK_URL=https://webhook.site/<your-id>
+scripts/test-trigger-and-track.sh --webhook-url "$WEBHOOK_URL"
+```
+
+- The helper test script triggers the workflow, parses the returned JSON, and fails if:
+  - The run name does not contain the correlation UUID.
+  - `gh run watch` reports a non-success conclusion.
+- For local receivers, swap the webhook URL: `scripts/test-trigger-and-track.sh --webhook-url http://localhost:8080`.
+- Execute the helper concurrently from multiple shells to ensure unique correlation per run.

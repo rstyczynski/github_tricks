@@ -1,7 +1,7 @@
 # Sprint 0 - design
 
 ## GH-1. Prepare tools and techniques
-Status: Accepted
+Status: Implemented
 
 Description: Prepare toolset for GitHub workflow interaction. GitHub CLI, Go, and Java libraries should be used. Propose proper libraries for Go and especially Java, which will be used for production coding.
 
