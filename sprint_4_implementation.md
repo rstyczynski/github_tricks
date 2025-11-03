@@ -2,7 +2,7 @@
 
 ## GH-3.1. Test timings of run_id retrieval
 
-Status: Implemented
+Status: Done
 
 Implemented timing benchmark script `scripts/benchmark-correlation.sh` that measures the performance of the correlation mechanism from Sprint 1 by wrapping `scripts/trigger-and-track.sh`.
 
@@ -183,7 +183,7 @@ ls -lh runs/
 
 ## Testing
 
-Status: Implemented
+Status: Done
 
 **Static Validation**:
 

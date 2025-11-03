@@ -2,7 +2,7 @@
 
 ## GH-3.1. Test timings of run_id retrieval
 
-Status: Proposed
+Status: Done
 
 Description: Execute series of tests of products "GH-3. Workflow correlation" to find out typical delay time to retrieve run_id. Execute 10-20 jobs measuring run_id retrieval time. Present each timing and compute mean value.
 
@@ -128,7 +128,7 @@ JSON output (machine-readable, written to file if `--output` specified):
 
 ## GH-5.1. Test timings of execution logs retrieval
 
-Status: Proposed
+Status: Done
 
 Description: Execute series of tests of products "GH-5. Workflow log access after run access" to find out typical delay time to retrieve logs after job execution. Execute 10-20 jobs measuring log retrieval time. Present each timing and compute mean value.
 

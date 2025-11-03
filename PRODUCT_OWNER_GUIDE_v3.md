@@ -41,7 +41,13 @@ Each section contains prompt templates you can use directly with your AI Agent. 
 Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
 
 ```prompt
-We are now in contracting phase. Project scope is defined in SRS.md.
+We are now in contracting phase. Project scope is defined in SRS.md. Already performed work is documented in files:
+
+1. contracting*
+2. inception*
+3. elaboration*
+4. construction*
+5. sprint* 
 
 Before next steps, read and confirm the following:
 
@@ -140,7 +146,7 @@ Confirm when all is clear and you are ready to proceed.
 Once confirmed:
 
 ```prompt
-Proceed with implementation for accepted sprints.
+Proceed with implementation for accepted sprints. Run test for each software product to confirm proper execution before passing to the Product Owner.
 ```
 
 Here is a implementation review loop. Verify all the agent did by executing implemented tests. Request new tests to cover all cases.

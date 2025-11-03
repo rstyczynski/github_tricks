@@ -27,6 +27,10 @@ User triggers GitHub Workflow, that manifests it's progress by invoking webhooks
 
 Triggering GitHub workflow returns "accepted" code without any information about job identifier that can be used for further API interaction. Goal is to apply the best practice to access `id` form GitHub for a triggered workflow. Any solution is ok: it may be injection of information to the request or async information from the running workflow.
 
+### GH-3.1. Test timings of run_id retrieval
+
+Execute series of tests of products "GH-3. Workflow correlation" to find out typical delay time to retrieve run_id. Execute 10-20 jobs measuring run_id retrieval time. Present each timing and compute mean value.
+
 ### GH-4. Workflow log access realtime access
 
 Client running the workflow require to access workflow's log in the real time - during a run. Workflow should run longer time for this feature to be tested, during this longer run should emit log each few seconds. Operator used correlation_id or run_id if available in local repository. On this stage, the `repository` may be a file in a directory for easy parallel access.
@@ -34,6 +38,10 @@ Client running the workflow require to access workflow's log in the real time - 
 ### GH-5. Workflow log access after run access
 
 Client running the workflow require to access workflow's log after the run. Operator used correlation_id or run_id if available in local repository. On this stage, the `repository` may be a file in a directory for easy parallel access.
+
+### GH-5.1. Test timings of execution logs retrieval
+
+Execute series of tests of products "GH-5. Workflow log access after run access" to find out typical delay time to retrieve logs after job execution. Execute 10-20 jobs measuring log retrieval time. Present each timing and compute mean value.
 
 ### GH-6. Cancel requested workflow
 
@@ -97,6 +105,14 @@ Backlog Items:
 
 * GH-5. Workflow log access after run access
 
+### Sprint 4
+
+Status: Done
+
+Backlog Items:
+
+* GH-3.1. Test timings of run_id retrieval
+* GH-5.1. Test timings of execution logs retrieval
 
 ## Tools and libraries
 
