@@ -140,7 +140,7 @@ for ((i=1; i<=runs; i++)); do
 
   start_ms=$(get_timestamp_ms)
 
-  if result_json=$("${TRIGGER_SCRIPT}" --webhook-url "${webhook_url}" --workflow "${workflow}" --json-only 2>&1); then
+  if result_json=$("${TRIGGER_SCRIPT}" --webhook-url "${webhook_url}" --workflow "${workflow}" --json-only); then
     end_ms=$(get_timestamp_ms)
     elapsed=$((end_ms - start_ms))
 
@@ -163,7 +163,7 @@ for ((i=1; i<=runs; i++)); do
       ((failed_count++))
     fi
   else
-    log "  ✗ trigger-and-track.sh failed: ${result_json}"
+    log "  ✗ trigger-and-track.sh failed"
     ((failed_count++))
   fi
 

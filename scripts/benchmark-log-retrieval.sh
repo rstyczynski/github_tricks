@@ -155,8 +155,8 @@ for ((i=1; i<=runs; i++)); do
     --input iterations=3 \
     --input sleep_seconds=2 \
     --store-dir "${store_dir}" \
-    --json-only 2>&1); then
-    log "  ✗ Failed to trigger workflow: ${trigger_result}"
+    --json-only); then
+    log "  ✗ Failed to trigger workflow"
     ((failed_count++))
     continue
   fi
