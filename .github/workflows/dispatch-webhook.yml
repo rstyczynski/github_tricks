@@ -1,11 +1,19 @@
 name: Dispatch Webhook
 
+run-name: >
+  Dispatch Webhook${{ inputs.correlation_id != '' && format(' ({0})', inputs.correlation_id) || '' }}
+
 on:
   workflow_dispatch:
     inputs:
       webhook_url:
         description: "HTTP endpoint that receives workflow progress notifications"
         required: true
+        type: string
+      correlation_id:
+        description: "Optional correlation token echoed in logs and webhook payload"
+        required: false
+        default: ""
         type: string
 
 jobs:
@@ -20,12 +28,15 @@ jobs:
         run: |
           echo "Hello from ${GITHUB_RUN_ID}.dispatch"
           echo "run_id=${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+          if [[ -n "${{ inputs.correlation_id }}" ]]; then
+            echo "Correlation ID: ${{ inputs.correlation_id }}"
+          fi
 
       - name: Notify webhook
         env:
           WEBHOOK_URL: ${{ inputs.webhook_url }}
           RUN_ID: ${{ steps.emit.outputs.run_id }}
-          CORRELATION_ID: ${{ env.CORRELATION_ID }}
+          CORRELATION_ID: ${{ inputs.correlation_id }}
         run: ./scripts/notify-webhook.sh
 
       - name: Summarize webhook invocation

@@ -7,13 +7,13 @@ Description: User triggers GitHub Workflow that manifests its progress via webho
 
 Goal: Let the user trigger a GitHub Workflow that reports its progress through webhooks, guaranteeing retries without blocking the endpoint and emitting `Hello from <id>.<step>`.
 
-- Author a reusable workflow `.github/workflows/dispatch-webhook.yml` triggered by `workflow_dispatch` with a single required input `webhook_url`.
+- Author a reusable workflow `.github/workflows/dispatch-webhook.yml` triggered by `workflow_dispatch` with required input `webhook_url` and optional `correlation_id` (empty by default for GH-2 usage). Use `run-name` to append the correlation ID when provided so runs are easy to spot in the Actions UI.
 - Workflow structure:
   - Job `emit` runs on `ubuntu-latest`.
-  - First step uses an `actions/github-script@v7` step to emit `Hello from <run_id>.dispatch` to the workflow log and expose `${{ github.run_id }}` via job outputs for logging only.
+  - First step uses an `actions/github-script@v7` step to emit `Hello from <run_id>.dispatch` to the workflow log, echo the optional correlation ID, and expose `${{ github.run_id }}` via job outputs for logging only.
   - Second step invokes a shell script (`scripts/notify-webhook.sh`) that posts JSON `{ "message": "Hello from <run_id>.<step>" }` to the provided webhook. Use `curl` with `--retry 5 --retry-all-errors --max-time 5` to satisfy the “basic retry policy” requirement and ensure the workflow never blocks on an unresponsive endpoint (capture failures, convert to warnings).
   - Third step emits a terminal summary with the webhook response status to aid manual tracing.
-- Provide documentation snippet in sprint notes showing how to trigger via `gh workflow run dispatch-webhook.yml --raw-field webhook_url=https://webhook.site/<your-id>` using a unique endpoint from webhook.site.
+- Provide documentation snippet in sprint notes showing how to trigger via `gh workflow run dispatch-webhook.yml --raw-field webhook_url=https://webhook.site/<your-id>` (with `--raw-field correlation_id=` omitted for GH-2) using a unique endpoint from webhook.site.
 - Place reusable shell logic under `scripts/` and make it idempotent, using `trap` to clean temporary files when writing payloads.
 
 ## GH-3. Workflow correlation

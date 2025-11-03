@@ -4,8 +4,9 @@
 Status: Progress
 
 - Added workflow `.github/workflows/dispatch-webhook.yml`:
-  - Triggered by `workflow_dispatch` and requires `webhook_url` input.
-  - Emits the run identifier in the first step (`Hello from <run_id>.dispatch`) and exposes it as a job output.
+  - Triggered by `workflow_dispatch` and requires `webhook_url` input while accepting optional `correlation_id` (defaults empty for GH-2).
+  - Sets `run-name: Dispatch Webhook (<correlation_id>)` when the token is supplied so runs are searchable in the Actions UI.
+  - Emits the run identifier in the first step (`Hello from <run_id>.dispatch`), echoes the correlation ID when present, and exposes it as a job output.
   - Calls `scripts/notify-webhook.sh`, which posts `{ "message": "Hello from <run_id>.notify" }` (plus optional `correlationId`) with retry and timeout settings so the workflow never blocks on the endpoint.
   - Appends `notification-summary.md` contents to the job summary for quick inspection.
 - Usage example (from the repo root):
@@ -13,6 +14,7 @@ Status: Progress
 ```bash
 export WEBHOOK_URL=PASTE # copy "Your unique URL" from https://webhook.site
 gh workflow run dispatch-webhook.yml --raw-field webhook_url=$WEBHOOK_URL
+# Optional: gh workflow run ... --raw-field correlation_id=$(uuidgen) when testing correlation manually
 ```
 
 - Keep the webhook.site tab open to watch incoming requests for the copied URL.
@@ -24,13 +26,14 @@ Status: Progress
 
 - Added helper `scripts/trigger-and-track.sh` that generates a UUID correlation ID, sets `CORRELATION_ID` for the workflow run, and polls for the matching run by scanning workflow logs for the token.
 - Script echoes the webhook URL in use so operators can double-check they pasted the intended `https://webhook.site/<your-id>` endpoint.
+- Correlation runs appear in the Actions list with `Dispatch Webhook (<correlation_id>)`, making manual inspection straightforward.
 - Polling limits:
   - Default timeout 60 seconds (`--timeout` override) and interval 3 seconds (`--interval` override).
   - Filters by branch (`--ref`) defaulting to the current branch.
 - Example usage:
 
 ```bash
-scripts/trigger-and-track.sh --webhook-url https://webhook.site/<your-id>
+scripts/trigger-and-track.sh --webhook-url $WEBHOOK_URL
 ```
 
 - To skip the interactive prompt on subsequent runs, export `WEBHOOK_URL=https://webhook.site/<your-id>` before invoking the script.

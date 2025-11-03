@@ -114,7 +114,7 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
   echo "::warning::GITHUB_TOKEN is not set; gh CLI must already be authenticated."
 fi
 
-dispatch_output="$(CORRELATION_ID="${correlation_id}" gh workflow run dispatch-webhook.yml --ref "${ref}" --raw-field webhook_url="${webhook_url}")"
+dispatch_output="$(gh workflow run dispatch-webhook.yml --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}")"
 echo "${dispatch_output}"
 
 tmp_dir="$(mktemp -d)"
