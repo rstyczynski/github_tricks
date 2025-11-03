@@ -66,3 +66,17 @@ if [[ "${run_conclusion}" != "success" ]]; then
 fi
 
 echo "Correlation verified successfully."
+
+FETCH_SCRIPT="${SCRIPT_DIR}/fetch-run-logs.sh"
+if [[ -x "${FETCH_SCRIPT}" ]]; then
+  echo "Fetching completed run logs..."
+  if fetch_output="$("${FETCH_SCRIPT}" --run-id "${run_id}" --json)"; then
+    echo "${fetch_output}"
+  else
+    status=$?
+    echo "Failed to download logs for run ${run_id} (exit ${status})." >&2
+    exit "${status}"
+  fi
+else
+  echo "Log fetch script not found at ${FETCH_SCRIPT}; skipping log retrieval." >&2
+fi
