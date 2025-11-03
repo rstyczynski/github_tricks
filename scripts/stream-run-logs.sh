@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: stream-run-logs.sh [--run-id <id>] [--run-id-file <path>] [--runs-dir <dir> --correlation-id <id>] [--summary]
+Usage: stream-run-logs.sh [--run-id <id>] [--run-id-file <path>] [--runs-dir <dir> --correlation-id <id>] [--interval <seconds>] [--summary]
 
 Streams live GitHub Actions logs for a workflow run. If --run-id is not supplied,
 the script expects JSON on stdin with a top-level "run_id" field (e.g. output
@@ -15,6 +15,7 @@ Options:
   --run-id-file     File containing a run_id (raw or JSON with run_id field).
   --runs-dir <dir>  Directory containing stored run metadata (from --store-dir).
   --correlation-id  Correlation token used with --runs-dir to locate run metadata.
+  --interval <sec>  Polling interval in seconds (default: 2).
   --summary         Print run / job status snapshot without streaming logs.
   -h, --help        Show this help message.
 EOF
@@ -78,11 +79,41 @@ print_summary() {
   jq -r '.[] | "- " + (.name // "job") + ": " + (.status // "unknown") + ((.conclusion // "") | select(length > 0) | ", conclusion: " + .)' <<<"${jobs_json}"
 }
 
+stream_run_logs() {
+  local tmp_dir="$1"
+  local offset_file="${tmp_dir}/run.offset"
+  local log_gz="${tmp_dir}/run.log.gz"
+  local log_plain="${tmp_dir}/run.log"
+
+  if ! gh api "repos/${repo}/actions/runs/${run_id}/logs" --silent >"${log_gz}" 2>/dev/null; then
+    return
+  fi
+
+  if ! gzip -dc "${log_gz}" >"${log_plain}" 2>/dev/null; then
+    return
+  fi
+
+  local current_size previous_size
+  current_size="$(wc -c <"${log_plain}")"
+  previous_size=0
+  if [[ -f "${offset_file}" ]]; then
+    previous_size="$(cat "${offset_file}")"
+  fi
+
+  if (( current_size == 0 || current_size == previous_size )); then
+    return
+  fi
+
+  tail -c +"$((previous_size + 1))" "${log_plain}"
+  echo "${current_size}" >"${offset_file}"
+}
+
 run_id=""
 summary_mode=false
 run_id_file=""
 runs_dir=""
 correlation_lookup=""
+interval=2
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -100,6 +131,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --correlation-id)
       correlation_lookup="$2"
+      shift 2
+      ;;
+    --interval)
+      interval="$2"
       shift 2
       ;;
     --summary)
@@ -120,6 +155,8 @@ done
 
 require_command gh
 require_command jq
+require_command gzip
+require_command tail
 
 if [[ -n "${runs_dir}" && -z "${correlation_lookup}" && -z "${run_id}" && -z "${run_id_file}" ]]; then
   echo "Provide --correlation-id when using --runs-dir (or specify --run-id/--run-id-file)." >&2
@@ -148,22 +185,64 @@ if [[ -z "${run_id}" ]]; then
   exit 1
 fi
 
-repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-
-if [[ "${summary_mode}" == false ]]; then
-  gh run watch "${run_id}" --exit-status --log
-  exit $?
-fi
-
-run_json="$(gh api "repos/${repo}/actions/runs/${run_id}" 2>/dev/null || true)"
-if [[ -z "${run_json}" ]]; then
-  echo "Unable to fetch run ${run_id}. Ensure it exists and you have access." >&2
+if ! [[ "${interval}" =~ ^[0-9]+$ ]]; then
+  echo "Interval must be an integer number of seconds." >&2
   exit 1
 fi
 
-jobs_json="$(gh api "repos/${repo}/actions/runs/${run_id}/jobs" --paginate --jq '.jobs[] | {id: .id, name: .name, status: .status, conclusion: .conclusion, started_at: .started_at}' 2>/dev/null | jq -s '.' )"
-if [[ -z "${jobs_json}" || "${jobs_json}" == "null" ]]; then
-  jobs_json="[]"
+repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "${tmp_dir}"' EXIT
+
+if [[ "${summary_mode}" == true ]]; then
+  run_json="$(gh api "repos/${repo}/actions/runs/${run_id}" 2>/dev/null || true)"
+  if [[ -z "${run_json}" ]]; then
+    echo "Unable to fetch run ${run_id}. Ensure it exists and you have access." >&2
+    exit 1
+  fi
+
+  jobs_json="$(gh api "repos/${repo}/actions/runs/${run_id}/jobs" --paginate --jq '.jobs[] | {id: .id, name: .name, status: .status, conclusion: .conclusion, started_at: .started_at}' 2>/dev/null | jq -s '.' )"
+  if [[ -z "${jobs_json}" || "${jobs_json}" == "null" ]]; then
+    jobs_json="[]"
+  fi
+
+  print_summary "${run_json}" "${jobs_json}"
+  exit 0
 fi
 
-print_summary "${run_json}" "${jobs_json}"
+echo "Streaming logs for run ${run_id} in ${repo}"
+
+start_time=$SECONDS
+spinner_chars=$'|/-\\'
+spinner_index=0
+progress_message="Downloading logs"
+
+show_spinner() {
+  local elapsed=$(( SECONDS - start_time ))
+  local char=${spinner_chars:spinner_index:1}
+  printf '\r%s %s (elapsed %ss)' "${char}" "${progress_message}" "${elapsed}" >&2
+  spinner_index=$(( (spinner_index + 1) % ${#spinner_chars} ))
+}
+
+while :; do
+  show_spinner
+
+  stream_run_logs "${tmp_dir}"
+
+  run_json="$(gh api "repos/${repo}/actions/runs/${run_id}" 2>/dev/null || true)"
+  if [[ -z "${run_json}" ]]; then
+    printf '\nUnable to fetch run %s.\n' "${run_id}" >&2
+    exit 1
+  fi
+
+  run_status="$(jq -r '.status // "unknown"' <<<"${run_json}")"
+  run_conclusion="$(jq -r '.conclusion // ""' <<<"${run_json}")"
+
+  if [[ "${run_status}" == "completed" ]]; then
+    printf '\rRun completed with conclusion: %s\n' "${run_conclusion:-unknown}" >&2
+    stream_run_logs "${tmp_dir}"
+    break
+  fi
+
+  sleep "${interval}"
+done
