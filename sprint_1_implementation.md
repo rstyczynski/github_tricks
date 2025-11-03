@@ -11,7 +11,7 @@ Status: Progress
 - Usage example (from the repo root):
 
 ```bash
-WEBHOOK_URL=PASTE # copy "Your unique URL" from https://webhook.site
+export WEBHOOK_URL=PASTE # copy "Your unique URL" from https://webhook.site
 gh workflow run dispatch-webhook.yml --raw-field webhook_url=$WEBHOOK_URL
 ```
 
