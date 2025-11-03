@@ -34,8 +34,10 @@ require_command() {
 }
 
 get_timestamp_ms() {
-  if date +%s%3N >/dev/null 2>&1; then
-    date +%s%3N
+  local ts
+  ts=$(date +%s%3N 2>/dev/null)
+  if [[ "${ts}" =~ ^[0-9]+$ ]]; then
+    echo "${ts}"
   else
     echo $(($(date +%s) * 1000))
   fi
