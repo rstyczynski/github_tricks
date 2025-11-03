@@ -1,7 +1,7 @@
 # Sprint 3 - Implementation Notes
 
 ## GH-5. Workflow log access after run access
-Status: Progress
+Status: Done
 
 - Added shared helper `scripts/lib/run-utils.sh` to centralize run ID and metadata lookups (file, stdin JSON, correlation store).
 - Implemented `scripts/fetch-run-logs.sh` that validates the run is completed, downloads the GitHub-generated archive, extracts logs beneath `runs/<correlation>/logs/`, produces a combined transcript, and emits `logs.json` with job/step metadata. Accepts run ID, stored correlation metadata, or stdin JSON.
@@ -9,7 +9,7 @@ Status: Progress
 - Updated `scripts/test-trigger-and-track.sh` to download logs via the new helper after watching the run to completion, giving an end-to-end example that exercises trigger, correlation, completion, and post-run log retrieval.
 
 ## Testing
-Status: Progress
+Status: Done
 
 - Static checks:
 
