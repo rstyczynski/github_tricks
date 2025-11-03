@@ -71,7 +71,7 @@ The Product Owner leads the design and implementation process. The Agent is trea
 Once the SRS document is ready, the Product Owner commands agent to read the document.
 
 ```prompt
-We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Summarize your understanding of their goals and deliverables.
+We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables.
 ```
 
 When the SRS is updated during this phase, the agent is asked to read it again.
@@ -86,7 +86,7 @@ Once the plan is satisfactory:
 2. Summarize review loop, and commit
 
 ```prompt
-Summarize this conversation in `inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Confirm your understanding, and summarize this conversation in `inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
 ```
 
 ## Elaboration
@@ -107,12 +107,12 @@ The design section has been updated. Confirm whether all requested changes are n
 
 Once the design is ok:
 
-1. Change the Phase's elaboration status token to `Accepted`.
-2. Change the Phase's inception status token to `Designed`.
+1. Change the Phase's elaboration (desing) status token to `Accepted`.
+2. Change the Phase's inception (implementation plan) status token to `Designed`.
 3. Summarize review loop, and commit
 
 ```prompt
-Summarize the discussion in `elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Confirm completion of the design, and summarize the discussion in `elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
 ```
 
 ## Construction
@@ -140,8 +140,10 @@ Confirm when all is clear and you are ready to proceed.
 Once confirmed:
 
 ```prompt
-Proceed with implementation for accepted phases.
+Proceed with implementation for accepted sprints.
 ```
+
+Here is a implementation review loop. Verify all the agent did by executing implemented tests. Request new tests to cover all cases.
 
 Once implementation is complete and verified through review:
 
@@ -151,7 +153,7 @@ Once implementation is complete and verified through review:
 4. Summarize review loop, and commit
 
 ```prompt
-Summarize the discussion in `construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Confirm completion of the implementation, and summarize the discussion in `construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
 ```
 
 ## Interventions

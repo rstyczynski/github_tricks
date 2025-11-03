@@ -81,9 +81,9 @@ Backlog Items:
 * GH-2. Trigger GitHub workflow
 * GH-3. Workflow correlation
 
-### Sprint 3
+### Sprint 2
 
-Status: Progress
+Status: Designed
 
 Backlog Items:
 

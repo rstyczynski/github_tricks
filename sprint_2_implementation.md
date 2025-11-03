@@ -14,8 +14,13 @@ Status: Progress
 ```bash
 # After triggering and correlating (long-running workflow)
 export WEBHOOK_URL=PASTE # copy "Your unique URL" from https://webhook.site
-scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml --store-dir runs \
-  | scripts/stream-run-logs.sh --interval 2
+scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml
+
+scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml --store-dir runs 
+
+scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml --store-dir runs --json-only 
+
+scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml --store-dir runs --json-only | scripts/stream-run-logs.sh --interval 2
 
 # Stream later using stored metadata
 scripts/stream-run-logs.sh --runs-dir runs --correlation-id <uuid>
