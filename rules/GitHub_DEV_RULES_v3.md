@@ -37,6 +37,8 @@ Product Owner creates general `Implementation Plan` that is subject for discussi
 
 The Implementor is responsible for creating the design in `Design` chapter under separated subchapter directly linked with the Sprint name from `Implementation Plan`.  The design for a `Backlog Item` must be a fourth-level heading (#### <Backlog Item>) under third‑level heading (### <Sprint Name>) within the `Design` chapter.
 
+The design must begin with a feasibility analysis of the requirements versus the available GitHub API. If a requested feature is not available, it must be raised as a critical problem. The Product Owner will then decide whether to reject the requirement.
+
 The Design must be approved by a status on top of the chapter, before Implementor starts the actual coding. Design is always supported by references to the documentation.
 
 ### Cooperation flow

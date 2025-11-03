@@ -83,11 +83,20 @@ Backlog Items:
 
 ### Sprint 2
 
-Status: Designed
+Status: Failed
 
 Backlog Items:
 
 * GH-4. Workflow log access realtime access
+
+### Sprint 3
+
+Status: Done
+
+Backlog Items:
+
+* GH-5. Workflow log access after run access
+
 
 ## Tools and libraries
 

@@ -68,7 +68,7 @@ Summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is th
 
 The Product Owner leads the design and implementation process. The Agent is treated as a real Implementor, collaborating through inception, design, implementation, testing, and documentation phases. Refer to files in `rules` directory for detailed rules shaping the project.
 
-Once the SRS document is ready, the Product Owner commands agent to read the document.
+Once the SRS document is ready, the Product Owner commands agent to read the document. This is a starting point of any subsequent sprints to be executed after execution break, having other sprint ready.
 
 ```prompt
 We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables.
