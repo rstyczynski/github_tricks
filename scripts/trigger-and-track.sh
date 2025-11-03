@@ -116,6 +116,10 @@ correlation_id="$(generate_uuid)"
 
 dispatch_epoch="$(date -u +%s)"
 
+if [[ -n "${store_dir}" ]]; then
+  mkdir -p "${store_dir}"
+fi
+
 workflow_id="$(gh api "repos/${repo}/actions/workflows/dispatch-webhook.yml" --jq '.id')"
 if [[ -z "${workflow_id}" ]]; then
   echo "Failed to resolve workflow id for dispatch-webhook.yml" >&2
@@ -181,7 +185,23 @@ while (( SECONDS - start_time < timeout )); do
 
   run_count=$(jq 'length' <<<"${runs_json}" 2>/dev/null || echo 0)
   [[ -z "${run_count}" ]] && run_count=0
-  progress_message="Polling for workflow run (active runs: ${run_count})"
+
+  completed_count=0
+  if [[ -z "${candidate_run_id}" ]]; then
+    completed_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status completed --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
+    [[ -z "${completed_json}" ]] && completed_json='[]'
+    completed_count=$(jq 'length' <<<"${completed_json}" 2>/dev/null || echo 0)
+    candidate_run_id="$(jq -r \
+      --arg cid "${correlation_id}" \
+      --arg branch "${ref}" \
+      --argjson dispatch "${dispatch_epoch}" \
+      'map(select(.headBranch == $branch) |
+           select((.createdAt | fromdateiso8601) >= $dispatch) |
+           select((.name // "") | contains($cid)))
+       | first | (.databaseId // empty)' <<<"${completed_json}" )"
+  fi
+
+  progress_message="Polling for workflow run (active: ${run_count}, completed: ${completed_count})"
 
   if [[ -n "${candidate_run_id}" ]]; then
     found_run="${candidate_run_id}"
