@@ -10,10 +10,7 @@ Goal: Deliver a repeatable way to stream in-flight GitHub Actions logs so operat
 - Introduce CLI helper `scripts/stream-run-logs.sh` that follows an existing workflow run (identified via `--run-id`, a stored metadata file, or `scripts/trigger-and-track.sh` output piped through stdin).
 - The helper will:
   - Reuse scripts/trigger-and-track.sh to get GitHub run_id.
-  - For each job, call `gh api repos/:owner/:repo/actions/jobs/<job_id>/logs` to download the gzipped log stream while the job is running.
-  - Maintain a per-job cursor (bytes consumed) in a temp directory so repeated downloads only print new log fragments (decompress with `gzip -dc` and `tail` the delta).
-  - Interleave output by prefixing each line with `<job_name>/<step>` for readability, updating the terminal as new log content arrives.
-  - Exit when all jobs report `status == completed`, surfacing the final conclusion; optionally provide `--once` mode to emit a single snapshot and exit immediately.
+  - Stream logs by delegating to `gh run watch --log`, ensuring real-time output identical to GitHub CLI while still supporting stored metadata/resume scenarios.
 - Add summary playback support:
   - Provide `--summary` flag to print the most recent job/step statuses (without logs) by inspecting the job list, emulating a lightweight dashboard for slow connections.
   - Detect and warn if the API refuses partial logs (e.g., due to retention policy), guiding the operator to fall back to `gh run watch`.
