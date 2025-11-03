@@ -48,7 +48,9 @@ timeout=60
 interval=3
 ref=""
 workflow_file="dispatch-webhook.yml"
+workflow_name=""
 store_dir=""
+json_only=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -75,6 +77,10 @@ while [[ $# -gt 0 ]]; do
     --store-dir)
       store_dir="$2"
       shift 2
+      ;;
+    --json-only)
+      json_only=true
+      shift
       ;;
     -h|--help)
       usage
@@ -125,13 +131,14 @@ if [[ -n "${store_dir}" ]]; then
   mkdir -p "${store_dir}"
 fi
 
-workflow_id="$(gh api "repos/${repo}/actions/workflows/${workflow_file}" --jq '.id' 2>/dev/null || true)"
+workflow_name="$(basename "${workflow_file}")"
+workflow_id="$(gh api "repos/${repo}/actions/workflows/${workflow_name}" --jq '.id' 2>/dev/null || true)"
 if [[ -z "${workflow_id}" ]]; then
-  echo "Failed to resolve workflow id for ${workflow_file}" >&2
+  echo "Failed to resolve workflow id for ${workflow_name}" >&2
   exit 1
 fi
 
-echo "Triggering workflow ${workflow_file} on ${repo} (ref: ${ref})"
+echo "Triggering workflow ${workflow_name} on ${repo} (ref: ${ref})"
 echo "Generated correlation ID: ${correlation_id}"
 
 if [[ -z "${GITHUB_TOKEN:-}" ]]; then
@@ -139,7 +146,7 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
 fi
 
 dispatch_output=""
-if dispatch_output="$(gh workflow run "${workflow_file##*/}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
+if dispatch_output="$(gh workflow run "${workflow_name}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
   echo "${dispatch_output}"
 else
   if echo "${dispatch_output}" | grep -qi "not found"; then
@@ -169,8 +176,8 @@ show_spinner() {
 while (( SECONDS - start_time < timeout )); do
   show_spinner
 
-  queued_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status queued --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
-  in_progress_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status in_progress --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
+  queued_json="$(gh run list --workflow "${workflow_name}" --limit 50 --status queued --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
+  in_progress_json="$(gh run list --workflow "${workflow_name}" --limit 50 --status in_progress --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
 
   [[ -z "${queued_json}" ]] && queued_json='[]'
   [[ -z "${in_progress_json}" ]] && in_progress_json='[]'
@@ -191,7 +198,7 @@ while (( SECONDS - start_time < timeout )); do
 
   completed_count=0
   if [[ -z "${candidate_run_id}" ]]; then
-    completed_json="$(gh run list --workflow "${workflow_file}" --limit 50 --status completed --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
+    completed_json="$(gh run list --workflow "${workflow_name}" --limit 50 --status completed --json databaseId,name,headBranch,createdAt 2>/dev/null || echo '[]')"
     [[ -z "${completed_json}" ]] && completed_json='[]'
     completed_count=$(jq 'length' <<<"${completed_json}" 2>/dev/null || echo 0)
     candidate_run_id="$(jq -r \
@@ -242,6 +249,9 @@ if [[ -n "${store_dir}" ]]; then
     >"${output_file}"
   echo "Stored run metadata at ${output_file}" >&2
 fi
-if [[ -n "${store_dir}" ]]; then
-  mkdir -p "${store_dir}"
+
+if [[ "${json_only}" == true ]]; then
+  jq -n --arg run_id "${found_run}" --arg correlation_id "${correlation_id}" \
+    '{run_id: $run_id, correlation_id: $correlation_id}'
+  exit 0
 fi
