@@ -201,35 +201,54 @@ Due to the nature of these benchmarks (measuring real GitHub API performance), t
 2. GitHub CLI authenticated (`gh auth status`)
 3. Valid webhook endpoint from https://webhook.site
 
-**GH-3.1 Testing Steps**:
+**Test Directory Structure**:
+
+Benchmark test scripts and outputs are organized in the `tests/` directory:
+
+```
+tests/
+├── README.md                        # Testing documentation
+├── run-correlation-benchmark.sh     # GH-3.1 wrapper script
+├── run-log-retrieval-benchmark.sh   # GH-5.1 wrapper script
+├── correlation-results.json         # GH-3.1 output (gitignored)
+└── log-results.json                 # GH-5.1 output (gitignored)
+```
+
+**GH-3.1 Testing Steps (Using Wrapper Script)**:
 
 ```bash
 # 1. Set up webhook endpoint
 export WEBHOOK_URL=https://webhook.site/<your-unique-id>
 
-# 2. Run correlation timing benchmark
-scripts/benchmark-correlation.sh --runs 10 --output correlation-results.json
+# 2. Run correlation timing benchmark (wrapper script outputs to tests/)
+tests/run-correlation-benchmark.sh
 
 # 3. Verify results
-jq '.statistics' correlation-results.json
+jq '.statistics' tests/correlation-results.json
 # Expected: mean timing in milliseconds, typically 2000-5000ms depending on GitHub load
 
 # 4. Check for failed runs
-jq '.failed_runs' correlation-results.json
+jq '.failed_runs' tests/correlation-results.json
 # Expected: 0 (all runs should succeed)
 ```
 
-**GH-5.1 Testing Steps**:
+Alternative (direct script invocation):
+
+```bash
+scripts/benchmark-correlation.sh --runs 10 --output tests/correlation-results.json
+```
+
+**GH-5.1 Testing Steps (Using Wrapper Script)**:
 
 ```bash
 # 1. Set up webhook endpoint
 export WEBHOOK_URL=https://webhook.site/<your-unique-id>
 
 # 2. Run log retrieval timing benchmark (takes ~15-20 minutes for 10 runs)
-scripts/benchmark-log-retrieval.sh --runs 10 --store-dir runs --output log-results.json
+tests/run-log-retrieval-benchmark.sh
 
 # 3. Verify results
-jq '.statistics' log-results.json
+jq '.statistics' tests/log-results.json
 # Expected: mean timing in milliseconds, typically 1000-3000ms depending on log size and GitHub load
 
 # 4. Inspect downloaded logs
@@ -237,8 +256,14 @@ ls -lh runs/*/logs/
 # Expected: directories containing extracted job logs and combined.log
 
 # 5. Check for failed runs
-jq '.failed_runs' log-results.json
+jq '.failed_runs' tests/log-results.json
 # Expected: 0 (all runs should succeed)
+```
+
+Alternative (direct script invocation):
+
+```bash
+scripts/benchmark-log-retrieval.sh --runs 10 --output tests/log-results.json
 ```
 
 **Expected Behavior**:
