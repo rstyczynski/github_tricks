@@ -86,7 +86,7 @@ Once the plan is satisfactory:
 2. Summarize review loop, and commit
 
 ```prompt
-Summarize this conversation in `inception_review_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Summarize this conversation in `inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
 ```
 
 ## Elaboration
@@ -112,7 +112,7 @@ Once the design is ok:
 3. Summarize review loop, and commit
 
 ```prompt
-Summarize the discussion in `elaboration_review_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Summarize the discussion in `elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
 ```
 
 ## Construction
@@ -151,7 +151,7 @@ Once implementation is complete and verified through review:
 4. Summarize review loop, and commit
 
 ```prompt
-Summarize the discussion in `construction_review_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository.
+Summarize the discussion in `construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
 ```
 
 ## Interventions
