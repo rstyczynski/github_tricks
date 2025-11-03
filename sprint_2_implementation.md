@@ -49,7 +49,10 @@ actionlint
 
 ```bash
 export WEBHOOK_URL=https://webhook.site/<id>
-scripts/test-trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --workflow .github/workflows/long-run-logger.yml --store-dir runs --json-only \
+scripts/test-trigger-and-track.sh --webhook-url "$WEBHOOK_URL" \
+  --workflow .github/workflows/long-run-logger.yml \
+  --input iterations=12 --input sleep_seconds=5 \
+  --store-dir runs --json-only \
   | scripts/stream-run-logs.sh --interval 2
 ```
 

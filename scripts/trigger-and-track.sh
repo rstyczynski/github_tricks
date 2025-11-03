@@ -4,16 +4,20 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--workflow <file>] [--store-dir <dir>]
+Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--workflow <file>] [--store-dir <dir>] [--input key=value] [--json-only]
 
 Triggers the dispatch-webhook workflow and waits for the GitHub run that emits the provided correlation token.
 Outputs JSON containing the run_id and correlation_id.
 EOF
 }
 
+log() {
+  printf '%s\n' "$*" >&2
+}
+
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "Missing required command: $1" >&2
+    log "Missing required command: $1"
     exit 1
   fi
 }
@@ -51,6 +55,7 @@ workflow_file="dispatch-webhook.yml"
 workflow_name=""
 store_dir=""
 json_only=false
+declare -a extra_inputs=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -78,6 +83,10 @@ while [[ $# -gt 0 ]]; do
       store_dir="$2"
       shift 2
       ;;
+    --input)
+      extra_inputs+=("$2")
+      shift 2
+      ;;
     --json-only)
       json_only=true
       shift
@@ -103,12 +112,12 @@ if [[ -z "${webhook_url}" ]]; then
 fi
 
 if [[ -z "${webhook_url}" ]]; then
-  echo "Missing webhook URL; provide --webhook-url or set WEBHOOK_URL." >&2
+  log "Missing webhook URL; provide --webhook-url or set WEBHOOK_URL."
   usage
   exit 1
 fi
 
-echo "Using webhook URL: ${webhook_url}"
+log "Using webhook URL: ${webhook_url}"
 
 require_command gh
 require_command jq
@@ -134,27 +143,37 @@ fi
 workflow_name="$(basename "${workflow_file}")"
 workflow_id="$(gh api "repos/${repo}/actions/workflows/${workflow_name}" --jq '.id' 2>/dev/null || true)"
 if [[ -z "${workflow_id}" ]]; then
-  echo "Failed to resolve workflow id for ${workflow_name}" >&2
+  log "Failed to resolve workflow id for ${workflow_name}"
   exit 1
 fi
 
-echo "Triggering workflow ${workflow_name} on ${repo} (ref: ${ref})"
-echo "Generated correlation ID: ${correlation_id}"
+log "Triggering workflow ${workflow_name} on ${repo} (ref: ${ref})"
+log "Generated correlation ID: ${correlation_id}"
 
 if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-  echo "::warning::GITHUB_TOKEN is not set; gh CLI must already be authenticated."
+  log "::warning::GITHUB_TOKEN is not set; gh CLI must already be authenticated."
 fi
 
 dispatch_output=""
-if dispatch_output="$(gh workflow run "${workflow_name}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
-  echo "${dispatch_output}"
+declare -a workflow_args=()
+workflow_args+=(--ref "${ref}")
+workflow_args+=(--raw-field "correlation_id=${correlation_id}")
+if [[ "${workflow_name}" == "dispatch-webhook.yml" ]]; then
+  workflow_args+=(--raw-field "webhook_url=${webhook_url}")
+fi
+for input in "${extra_inputs[@]}"; do
+  workflow_args+=(--raw-field "${input}")
+done
+
+if dispatch_output="$(gh workflow run "${workflow_name}" "${workflow_args[@]}" 2>&1)"; then
+  [[ "${json_only}" == true ]] || log "${dispatch_output}"
 else
   if echo "${dispatch_output}" | grep -qi "not found"; then
-    echo "Filename dispatch failed (404). Retrying with workflow ID ${workflow_id}."
-    dispatch_output="$(gh workflow run "${workflow_id}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"
-    echo "${dispatch_output}"
+    log "Filename dispatch failed (404). Retrying with workflow ID ${workflow_id}."
+    dispatch_output="$(gh workflow run "${workflow_id}" "${workflow_args[@]}" 2>&1)"
+    [[ "${json_only}" == true ]] || log "${dispatch_output}"
   else
-    echo "${dispatch_output}" >&2
+    printf '%s\n' "${dispatch_output}" >&2
     exit 1
   fi
 fi
@@ -167,9 +186,10 @@ spinner_index=0
 progress_message="Polling for workflow run"
 
 show_spinner() {
+  [[ "${json_only}" == true ]] && return
   local elapsed=$(( SECONDS - start_time ))
   local char=${spinner_chars:spinner_index:1}
-  printf '\r%s %s (elapsed %ss)' "${char}" "${progress_message}" "${elapsed}"
+  printf '\r%s %s (elapsed %ss)' "${char}" "${progress_message}" "${elapsed}" >&2
   spinner_index=$(( (spinner_index + 1) % ${#spinner_chars} ))
 }
 
@@ -221,19 +241,16 @@ while (( SECONDS - start_time < timeout )); do
   sleep "${interval}"
 done
 
-printf '\r'
+[[ "${json_only}" == true ]] || printf '\r' >&2
 
 if [[ -n "${found_run}" ]]; then
-  echo "Found workflow run ${found_run}"
+  log "Found workflow run ${found_run}"
 fi
 
 if [[ -z "${found_run}" ]]; then
-  echo "Failed to correlate workflow run within ${timeout} seconds." >&2
+  log "Failed to correlate workflow run within ${timeout} seconds."
   exit 1
 fi
-
-jq -n --arg run_id "${found_run}" --arg correlation_id "${correlation_id}" \
-  '{run_id: $run_id, correlation_id: $correlation_id}'
 
 if [[ -n "${store_dir}" ]]; then
   output_file="${store_dir}/${correlation_id}.json"
@@ -247,11 +264,15 @@ if [[ -n "${store_dir}" ]]; then
     --arg stored_at "${stored_at}" \
     '{run_id: $run_id, correlation_id: $correlation_id, branch: $branch, workflow: $workflow, repo: $repo, stored_at: $stored_at}' \
     >"${output_file}"
-  echo "Stored run metadata at ${output_file}" >&2
+  log "Stored run metadata at ${output_file}"
 fi
 
+result_json="$(jq -n --arg run_id "${found_run}" --arg correlation_id "${correlation_id}" \
+  '{run_id: $run_id, correlation_id: $correlation_id}')"
+
 if [[ "${json_only}" == true ]]; then
-  jq -n --arg run_id "${found_run}" --arg correlation_id "${correlation_id}" \
-    '{run_id: $run_id, correlation_id: $correlation_id}'
+  printf '%s\n' "${result_json}"
   exit 0
 fi
+
+printf '%s\n' "${result_json}"
