@@ -29,11 +29,11 @@ Triggering GitHub workflow returns "accepted" code without any information about
 
 ### GH-4. Workflow log access realtime access
 
-Client running the workflow require to access workflow's log in the real time - during a run.
+Client running the workflow require to access workflow's log in the real time - during a run. Workflow should run longer time for this feature to be tested, during this longer run should emit log each few seconds. Operator used correlation_id or run_id if available in local repository. On this stage, the `repository` may be a file in a directory for easy parallel access.
 
 ### GH-5. Workflow log access after run access
 
-Client running the workflow require to access workflow's log after the run.
+Client running the workflow require to access workflow's log after the run. Operator used correlation_id or run_id if available in local repository. On this stage, the `repository` may be a file in a directory for easy parallel access.
 
 ### GH-6. Cancel requested workflow
 
@@ -64,19 +64,30 @@ This chapter is owned by the Product Owner. The Implementor NEVER changes this c
 
 ### Sprint 0 - Prerequisites
 
-Status: Progress
+Status: Done
 
 Document perquisites. Prepare guided documentation with commands leading to prerequisite execution. Operator will copy/paste required command lines.
 
-### GH-1. Prepare tools and techniques
+Backlog Items:
+
+* GH-1. Prepare tools and techniques
 
 ### Sprint 1
 
+Status: Done
+
+Backlog Items:
+
+* GH-2. Trigger GitHub workflow
+* GH-3. Workflow correlation
+
+### Sprint 3
+
 Status: Progress
 
-#### Backlog Item: `1. Trigger GitHub workflow`
+Backlog Items:
 
-#### Backlog Item: `2. Workflow correlation`
+* GH-4. Workflow log access realtime access
 
 ## Tools and libraries
 
