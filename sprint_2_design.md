@@ -1,4 +1,4 @@
-# Sprint 3 - design
+# Sprint 2 - design
 
 ## GH-4. Workflow log access realtime access
 Status: Accepted
