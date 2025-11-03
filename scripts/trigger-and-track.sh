@@ -139,7 +139,7 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
 fi
 
 dispatch_output=""
-if dispatch_output="$(gh workflow run "${workflow_file}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
+if dispatch_output="$(gh workflow run "${workflow_file##*/}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
   echo "${dispatch_output}"
 else
   if echo "${dispatch_output}" | grep -qi "not found"; then
