@@ -33,7 +33,7 @@ scripts/benchmark-correlation.sh \
   --runs 15 \
   --workflow .github/workflows/dispatch-webhook.yml \
   --webhook-url https://webhook.site/<your-id> \
-  --output correlation-timings.json
+  --output tests/correlation-timings.json
 ```
 
 **Example Output**:
@@ -81,10 +81,10 @@ Manual testing requires real GitHub infrastructure:
 export WEBHOOK_URL=https://webhook.site/<your-unique-id>
 
 # Run benchmark with default settings (10 runs)
-scripts/benchmark-correlation.sh --output results.json
+scripts/benchmark-correlation.sh --output tests/correlation-results.json
 
 # Verify JSON output structure
-jq '.statistics' results.json
+jq '.statistics' tests/correlation-results.json
 ```
 
 ## GH-5.1. Test timings of execution logs retrieval
@@ -119,9 +119,9 @@ Custom configuration:
 ```bash
 scripts/benchmark-log-retrieval.sh \
   --runs 15 \
-  --webhook-url https://webhook.site/<your-id> \
+  --webhook-url $WEBHOOK_URL \
   --store-dir runs \
-  --output log-retrieval-timings.json
+  --output tests/log-retrieval-timings.json
 ```
 
 **Example Output**:
@@ -172,10 +172,10 @@ export WEBHOOK_URL=https://webhook.site/<your-unique-id>
 
 # Run benchmark with default settings (10 runs)
 # Note: This will take several minutes due to workflow execution time
-scripts/benchmark-log-retrieval.sh --output log-results.json
+scripts/benchmark-log-retrieval.sh --output tests/log-results.json
 
 # Verify JSON output structure
-jq '.statistics' log-results.json
+jq '.statistics' tests/log-results.json
 
 # Inspect stored logs and metadata
 ls -lh runs/
