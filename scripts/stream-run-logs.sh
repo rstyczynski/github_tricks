@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: stream-run-logs.sh [--run-id <id>] [--interval <seconds>] [--summary] [--once]
+Usage: stream-run-logs.sh [--run-id <id>] [--run-id-file <path>] [--runs-dir <dir> --correlation-id <id>] [--interval <seconds>] [--summary] [--once]
 
 Streams live GitHub Actions logs for a workflow run. If --run-id is not supplied,
 the script expects JSON on stdin with a top-level "run_id" field (e.g. output
@@ -12,6 +12,9 @@ from scripts/trigger-and-track.sh).
 
 Options:
   --run-id <id>     Workflow run identifier to monitor.
+  --run-id-file     File containing a run_id (raw or JSON with run_id field).
+  --runs-dir <dir>  Directory containing stored run metadata (from --store-dir).
+  --correlation-id  Correlation token used with --runs-dir to locate run metadata.
   --interval <sec>  Polling interval in seconds (default: 3).
   --summary         Print run / job status snapshot without fetching logs.
   --once            Perform a single poll (useful with --summary) and exit.
@@ -106,6 +109,9 @@ run_id=""
 interval=3
 summary_mode=false
 once=false
+run_id_file=""
+runs_dir=""
+correlation_lookup=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -125,6 +131,18 @@ while [[ $# -gt 0 ]]; do
       once=true
       shift
       ;;
+    --run-id-file)
+      run_id_file="$2"
+      shift 2
+      ;;
+    --runs-dir)
+      runs_dir="$2"
+      shift 2
+      ;;
+    --correlation-id)
+      correlation_lookup="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -141,6 +159,37 @@ require_command gh
 require_command jq
 require_command gzip
 require_command tail
+
+if [[ -n "${runs_dir}" && -z "${correlation_lookup}" && -z "${run_id}" && -z "${run_id_file}" ]]; then
+  echo "Provide --correlation-id when using --runs-dir (or specify --run-id/--run-id-file)." >&2
+  exit 1
+fi
+
+read_run_id_from_file() {
+  local file_path="$1"
+  if [[ ! -f "${file_path}" ]]; then
+    echo ""
+    return
+  fi
+  if jq -e '.run_id' "${file_path}" >/dev/null 2>&1; then
+    jq -r '.run_id // empty' "${file_path}"
+  else
+    head -n1 "${file_path}" | tr -d '[:space:]'
+  fi
+}
+
+if [[ -z "${run_id}" && -n "${run_id_file}" ]]; then
+  run_id="$(read_run_id_from_file "${run_id_file}")"
+fi
+
+if [[ -z "${run_id}" && -n "${runs_dir}" && -n "${correlation_lookup}" ]]; then
+  candidate_file="${runs_dir%/}/${correlation_lookup}.json"
+  run_id="$(read_run_id_from_file "${candidate_file}")"
+  if [[ -z "${run_id}" ]]; then
+    echo "No run record for correlation ${correlation_lookup} in ${runs_dir}" >&2
+    exit 1
+  fi
+fi
 
 if [[ -z "${run_id}" ]]; then
   run_id="$(read_run_id_from_stdin)"

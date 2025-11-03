@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>]
+Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--store-dir <dir>]
 
 Triggers the dispatch-webhook workflow and waits for the GitHub run that emits the provided correlation token.
 Outputs JSON containing the run_id and correlation_id.
@@ -47,6 +47,7 @@ webhook_url=""
 timeout=60
 interval=3
 ref=""
+store_dir=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -64,6 +65,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --ref)
       ref="$2"
+      shift 2
+      ;;
+    --store-dir)
+      store_dir="$2"
       shift 2
       ;;
     -h|--help)
@@ -199,3 +204,21 @@ fi
 
 jq -n --arg run_id "${found_run}" --arg correlation_id "${correlation_id}" \
   '{run_id: $run_id, correlation_id: $correlation_id}'
+
+if [[ -n "${store_dir}" ]]; then
+  output_file="${store_dir}/${correlation_id}.json"
+  stored_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  jq -n \
+    --arg run_id "${found_run}" \
+    --arg correlation_id "${correlation_id}" \
+    --arg branch "${ref}" \
+    --arg workflow "${workflow_file}" \
+    --arg repo "${repo}" \
+    --arg stored_at "${stored_at}" \
+    '{run_id: $run_id, correlation_id: $correlation_id, branch: $branch, workflow: $workflow, repo: $repo, stored_at: $stored_at}' \
+    >"${output_file}"
+  echo "Stored run metadata at ${output_file}" >&2
+fi
+if [[ -n "${store_dir}" ]]; then
+  mkdir -p "${store_dir}"
+fi
