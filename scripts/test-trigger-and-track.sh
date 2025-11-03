@@ -15,8 +15,28 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-RESULT="$("${TRIGGER_SCRIPT}" "$@")"
+json_only=false
+declare -a trigger_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --json-only)
+      json_only=true
+      shift
+      ;;
+    *)
+      trigger_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+RESULT="$("${TRIGGER_SCRIPT}" "${trigger_args[@]}")"
 echo "${RESULT}"
+
+if [[ "${json_only}" == true ]]; then
+  exit 0
+fi
 
 run_id="$(jq -r '.run_id // empty' <<<"${RESULT}")"
 correlation_id="$(jq -r '.correlation_id // empty' <<<"${RESULT}")"

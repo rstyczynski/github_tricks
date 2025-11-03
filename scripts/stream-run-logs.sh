@@ -42,7 +42,12 @@ read_run_id_from_stdin() {
     return
   fi
 
-  echo "${input}" | jq -r '.run_id // empty'
+  if echo "${input}" | jq -e '.' >/dev/null 2>&1; then
+    echo "${input}" | jq -r '.run_id // empty'
+    return
+  fi
+
+  echo "${input}" | jq -R 'fromjson? | select(.run_id != null) | .run_id' | head -n1
 }
 
 print_summary() {
