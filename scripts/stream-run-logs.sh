@@ -211,7 +211,20 @@ trap 'rm -rf "${tmp_dir}"' EXIT
 
 echo "Streaming logs for run ${run_id} in ${repo}"
 
+start_time=$SECONDS
+spinner_chars=$'|/-\\'
+spinner_index=0
+progress_message="Polling run ${run_id}"
+
+show_spinner() {
+  local elapsed=$(( SECONDS - start_time ))
+  local char=${spinner_chars:spinner_index:1}
+  printf '\r%s %s (elapsed %ss)' "${char}" "${progress_message}" "${elapsed}"
+  spinner_index=$(( (spinner_index + 1) % ${#spinner_chars} ))
+}
+
 while :; do
+  show_spinner
   run_json="$(gh api "repos/${repo}/actions/runs/${run_id}" 2>/dev/null || true)"
   if [[ -z "${run_json}" ]]; then
     echo "Unable to fetch run ${run_id}. Ensure it exists and you have access." >&2
@@ -226,6 +239,9 @@ while :; do
     jobs_json="[]"
   fi
 
+  job_count=$(jq 'length' <<<"${jobs_json}" 2>/dev/null || echo 0)
+  progress_message="Polling run ${run_id} (jobs: ${job_count})"
+
   if [[ "${summary_mode}" == true ]]; then
     print_summary "${run_json}" "${jobs_json}"
   else
@@ -236,6 +252,7 @@ while :; do
   fi
 
   if [[ "${run_status}" == "completed" || "${run_status}" == "completed" && -n "${run_conclusion}" ]]; then
+    printf '\r'
     if [[ "${summary_mode}" == false ]]; then
       printf "\nRun completed with conclusion: %s\n" "${run_conclusion:-unknown}"
     fi
@@ -243,8 +260,11 @@ while :; do
   fi
 
   if [[ "${once}" == true ]]; then
+    printf '\r'
     break
   fi
 
   sleep "${interval}"
 done
+
+printf '\r'
