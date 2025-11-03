@@ -1,0 +1,38 @@
+name: Dispatch Webhook
+
+on:
+  workflow_dispatch:
+    inputs:
+      webhook_url:
+        description: "HTTP endpoint that receives workflow progress notifications"
+        required: true
+        type: string
+
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Emit run identifier
+        id: emit
+        run: |
+          echo "Hello from ${GITHUB_RUN_ID}.dispatch"
+          echo "run_id=${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify webhook
+        env:
+          WEBHOOK_URL: ${{ inputs.webhook_url }}
+          RUN_ID: ${{ steps.emit.outputs.run_id }}
+          CORRELATION_ID: ${{ env.CORRELATION_ID }}
+        run: ./scripts/notify-webhook.sh
+
+      - name: Summarize webhook invocation
+        if: always()
+        run: |
+          if [ -f notification-summary.md ]; then
+            cat notification-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "notification-summary.md not found" >> "$GITHUB_STEP_SUMMARY"
+          fi

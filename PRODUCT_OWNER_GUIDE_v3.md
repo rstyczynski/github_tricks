@@ -1,0 +1,210 @@
+# Product Owner Guide
+
+version: 3
+status: review
+
+## Introduction
+
+The Product Owner in agentic programming is the visionary who defines what should be built and ensures the AI Agent delivers it correctly. Unlike traditional software development where the Product Owner primarily manages human teams, agentic programming requires a unique skillset: the ability to guide AI agents through structured processes while maintaining control over quality and direction.
+
+AI agents need clear, unambiguous instructions—explicit is always better. As Product Owner, you should review and validate work after each phase rather than waiting until the end, allowing for early detection and correction of issues. It is essential to maintain a complete audit trail of all decisions and changes, ensuring that every step of the development process is documented. Be prepared to refine requirements and designs iteratively through ongoing dialogue with the Agent. Finally, give agents autonomy, but only within well-defined boundaries that you set and control.
+
+The Product Owner is responsible for:
+
+| Responsibility         | Description                                                                                   |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| Vision Management      | Defining clear, achievable objectives that AI agents can implement                            |
+| Process Control        | Guiding agents through structured development phases (Inception → Elaboration → Construction) |
+| Quality Assurance      | Ensuring compliance with technical standards and best practices                               |
+| Intervention           | Recognizing when agents deviate and correcting course promptly                                |
+| Documentation          | Maintaining requirements, design decisions, and implementation records                        |
+
+Success in agentic programming depends on understanding the capabilities and limitations of AI agents. They are powerful implementors but require explicit guidance, clear boundaries, and systematic oversight.
+
+### How to Use This Document
+
+This cheat sheet provides ready-to-use prompts and procedures for each development phase. It follows a Rational Unified Process (RUP) inspired approach adapted for AI collaboration:
+
+| Phase           | Purpose                                           |
+|-----------------|--------------------------------------------------|
+| Contracting     | Establish rules and scope before work begins      |
+| Inception       | Define requirements and validate understanding    |
+| Elaboration     | Design the solution architecture and approach     |
+| Construction    | Implement, test, and verify the code             |
+
+Each phase handles exceptions, when Product Owner handles deviations and maintains alignment.
+
+Each section contains prompt templates you can use directly with your AI Agent. Think of this as your operational playbook for managing AI-driven development projects.
+
+## Contracting
+
+Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
+
+```prompt
+We are now in contracting phase. Project scope is defined in SRS.md.
+
+Before next steps, read and confirm the following:
+
+1. Follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
+
+Enumerate required changes as instructed.
+
+Ask questions in case of clarifications needed as instructed.
+
+Summarize what have to be done.
+
+Confirm when all is clear and you are ready to proceed.
+```
+
+Once the contracting phase is finished:
+
+1. Summarize review loop, and commit
+
+```prompt
+Summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent contracting review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+```
+
+## Inception
+
+The Product Owner leads the design and implementation process. The Agent is treated as a real Implementor, collaborating through inception, design, implementation, testing, and documentation phases. Refer to files in `rules` directory for detailed rules shaping the project.
+
+Once the SRS document is ready, the Product Owner commands agent to read the document.
+
+```prompt
+We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Summarize your understanding of their goals and deliverables.
+```
+
+When the SRS is updated during this phase, the agent is asked to read it again.
+
+```prompt
+The document has been updated. Confirm whether everything is now clear or specify any remaining uncertainties.
+```
+
+Once the plan is satisfactory:
+
+1. Change the Phase's inception status token to `Accepted`.
+2. Summarize review loop, and commit
+
+```prompt
+Summarize this conversation in `inception_review_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+```
+
+## Elaboration
+
+Request design activities and confirm that the Agent is aware of and will comply with all applicable rules and best practices.
+
+```prompt
+We are now in elaboration phase. Look into the SRS document – focus on Sprints in status `Progress`.
+
+Document the design. Once completed, wait for review and further instructions.
+```
+
+Once the design is delivered by the Agent, the Product Owner reviews it. If changes are required, the Product Owner updates the design section to inform the Agent about the requested modifications.
+
+```prompt
+The design section has been updated. Confirm whether all requested changes are now clear.
+```
+
+Once the design is ok:
+
+1. Change the Phase's elaboration status token to `Accepted`.
+2. Change the Phase's inception status token to `Designed`.
+3. Summarize review loop, and commit
+
+```prompt
+Summarize the discussion in `elaboration_review_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+```
+
+## Construction
+
+Request implementation activities and confirm that the Agent understands and will comply with all applicable rules and best practices.
+
+Proceed to implementation for all accepted phases. Ensure that the Agent follows the defined standards and confirms rule awareness before coding begins.
+
+```prompt
+Design accepted. Proceed with implementation for accepted phases.
+
+Before next steps, read and confirm the following:
+
+1. Follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
+
+Enumerate required changes as instructed.
+
+Ask questions in case of clarifications needed as instructed.
+
+Summarize what have to be done.
+
+Confirm when all is clear and you are ready to proceed.
+```
+
+Once confirmed:
+
+```prompt
+Proceed with implementation for accepted phases.
+```
+
+Once implementation is complete and verified through review:
+
+1. Change the Phase's construction status token to `Implemented`.
+2. Change the Phase's elaboration status token to `Implemented`.
+3. Change the Phase's inception status token to `Implemented`.
+4. Summarize review loop, and commit
+
+```prompt
+Summarize the discussion in `construction_review_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository.
+```
+
+## Interventions
+
+Agent cooperation is not flawless. The Agent may over-engineer, ignore certain agreements, or introduce unexpected behavior. While this may seem like a limitation of current technology, it also reflects the Agent’s quasi-human creative tendencies. Occasionally, these deviations bring valuable new ideas to the project. The key is to recognize them early and channel them productively.
+
+| Category                | Typical Cause                     | Remedy                     |
+|-------------------------|---------------------------------|----------------------------|
+| Technical Noncompliance  | Code deviates from best practices | Enforce BP compliance      |
+| Procedural Violation    | Rules ignored or modified         | Restate limits, correct    |
+| Conceptual Defect       | Wrong technical assumptions       | Update design              |
+| Late Change             | Scope or need changed             | Add or revise              |
+| Systemic Failure        | Spec or rules unclear             | Amend rules or postpone    |
+
+When problems appear, inform the Agent directly. Communication should resemble that with a human collaborator, but empathy is unnecessary — the Agent is a machine. Use clear commands and explicit requirements rather than suggestions or explanations. Clearly identify what is wrong without unnecessary ceremony. Within an agentic ecosystem, you can combine the strengths of both systematic management and leadership-style guidance to achieve optimal results.
+
+Interventions are not failures but control points that maintain alignment between human intent and AI execution. Each correction strengthens mutual understanding and improves the next collaboration cycle.
+
+### Technical Noncompliance
+
+When the Product Owner detects deviations from Ansible Best Practices in the Agent’s output.
+
+```prompt
+I see the `collections` keyword used in the code, which is forbidden according to `rules/ANSIBLE_BP_v2.md`. Review all code and documentation for any violations of `rules/ANSIBLE_BP_v2.md` and correct them.
+```
+
+### Procedural Violation
+
+When the Agent violates collaboration rules or modifies restricted content, issue a direct corrective command.
+
+```prompt
+You updated the `Implementation Plan` status from `Designed` to `Planned`. NEVER update documents outside of `Design`, `Implementation notes`, `Proposed changes`, or `More information needed`. Even within these sections, do not modify paragraphs marked with `status`, as done in `Implementation notes`.
+```
+
+### Conceptual Defect
+
+When design flaws or inconsistencies are found, request corrective action.
+
+```prompt
+Update phase's `Design` to eliminate the problem.
+```
+
+### Late Change
+
+When the Product Owner discovers a required change in any late phase of the project, it's ok to add. When it's under an already existing phase (backlog item), describe the need. If it’s a new feature, the Product Owner should create a new item in the Backlog.
+
+```prompt
+Add it to the implementation.
+```
+
+### Systemic Failure
+
+It may happen that after several rounds of corrections, the agent still misbehaves, drifting from the Product Owner's vision. This indicates that rules or requirements are wrongly specified. In the former case, amend the rules to make them more specific; try to add contradicting examples.
+
+In case of functional implementation issues, verify if the requirement is clear enough and if it does not mismatch agent capabilities. Return to the Design phase to review the chosen approach. In the worst case mark requirement as `Postponed` or even `Rejected`. Commit the conversation keeping commit rules, and keep the misbehaving branch for your records.
+
