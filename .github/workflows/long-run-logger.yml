@@ -1,5 +1,8 @@
 name: Long Run Logger
 
+run-name: >
+  Long Run Logger${{ inputs.correlation_id != '' && format(' ({0})', inputs.correlation_id) || '' }}
+
 on:
   workflow_dispatch:
     inputs:
