@@ -1,7 +1,7 @@
 # Sprint 2 - design
 
 ## GH-4. Workflow log access realtime access
-Status: Accepted
+Status: Failed
 
 Description: Clients require access to workflow logs while the run is still executing, not just after completion.
 
