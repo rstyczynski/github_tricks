@@ -17,7 +17,7 @@ Goal: Deliver a repeatable way to stream in-flight GitHub Actions logs so operat
 - Add summary playback support:
   - Provide `--summary` flag to print the most recent job/step statuses (without logs) by inspecting the job list, emulating a lightweight dashboard for slow connections.
   - Detect and warn if the API refuses partial logs (e.g., due to retention policy), guiding the operator to fall back to `gh run watch`.
-- Extend `scripts/trigger-and-track.sh` with `--store-dir` to persist run metadata (JSON files keyed by correlation ID) so operators can pick up runs later.
+- Extend `scripts/trigger-and-track.sh` with `--store-dir` and `--workflow` flags to persist run metadata (JSON files keyed by correlation ID) and support selecting the long-running workflow during correlation.
 - Allow `scripts/stream-run-logs.sh` to accept `--run-id-file`, `--runs-dir`, and `--correlation-id` to retrieve stored run IDs from the local metadata repository.
 - Introduce a dedicated long-running workflow `.github/workflows/long-run-logger.yml` triggered via `workflow_dispatch` that:
   - Accepts optional `correlation_id`, iteration count, and sleep interval inputs.

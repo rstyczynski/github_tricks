@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--store-dir <dir>]
+Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--workflow <file>] [--store-dir <dir>]
 
 Triggers the dispatch-webhook workflow and waits for the GitHub run that emits the provided correlation token.
 Outputs JSON containing the run_id and correlation_id.
@@ -47,6 +47,7 @@ webhook_url=""
 timeout=60
 interval=3
 ref=""
+workflow_file="dispatch-webhook.yml"
 store_dir=""
 
 while [[ $# -gt 0 ]]; do
@@ -65,6 +66,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --ref)
       ref="$2"
+      shift 2
+      ;;
+    --workflow)
+      workflow_file="$2"
       shift 2
       ;;
     --store-dir)
@@ -120,15 +125,13 @@ if [[ -n "${store_dir}" ]]; then
   mkdir -p "${store_dir}"
 fi
 
-workflow_id="$(gh api "repos/${repo}/actions/workflows/dispatch-webhook.yml" --jq '.id')"
+workflow_id="$(gh api "repos/${repo}/actions/workflows/${workflow_file}" --jq '.id' 2>/dev/null || true)"
 if [[ -z "${workflow_id}" ]]; then
-  echo "Failed to resolve workflow id for dispatch-webhook.yml" >&2
+  echo "Failed to resolve workflow id for ${workflow_file}" >&2
   exit 1
 fi
 
-workflow_file="dispatch-webhook.yml"
-
-echo "Triggering workflow dispatch-webhook.yml on ${repo} (ref: ${ref})"
+echo "Triggering workflow ${workflow_file} on ${repo} (ref: ${ref})"
 echo "Generated correlation ID: ${correlation_id}"
 
 if [[ -z "${GITHUB_TOKEN:-}" ]]; then
@@ -136,7 +139,7 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
 fi
 
 dispatch_output=""
-if dispatch_output="$(gh workflow run dispatch-webhook.yml --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
+if dispatch_output="$(gh workflow run "${workflow_file}" --ref "${ref}" --raw-field webhook_url="${webhook_url}" --raw-field correlation_id="${correlation_id}" 2>&1)"; then
   echo "${dispatch_output}"
 else
   if echo "${dispatch_output}" | grep -qi "not found"; then
