@@ -2,81 +2,75 @@
 
 ## GH-11. Workflow Webhook as a tool to get run_id
 
-Status: Accepted
+Status: Proposed
 
-Description: Validate a production-ready flow where GitHub’s native webhook system provides the workflow `run_id` immediately after a dispatch, without relying on custom workflow steps. Operators must be able to point GitHub to `WEBHOOK_URL` (for example, a https://webhook.site endpoint), receive signed payloads, and map the resulting `run_id` back to the locally generated correlation identifier.
+Description: Demonstrate a minimal flow where a repository webhook delivers the workflow `run_id` for dispatches so operators can correlate runs without polling APIs.
 
-Goal: Extend the existing tooling so the repository webhook created through GitHub APIs captures `workflow_run` events, surfaces the `workflow_run.id`, and stores the event alongside prior Sprint metadata. The solution must coexist with Sprint 1 correlation scripts and Sprint 3 log storage so operators can choose between polling and webhook-driven tracking.
+Goal: Provide lightweight scripts that set up the webhook, capture payloads, and record the resulting `run_id` alongside the correlation identifier generated during dispatch. The solution must reuse existing Sprint 1/3 storage layout (`runs/`) and remain intentionally simple—no secrets, no signature validation.
 
 ### Feasibility Analysis
 
-- GitHub repository webhooks can be created and managed through the REST API (`POST /repos/{owner}/{repo}/hooks`, `PATCH /repos/{owner}/{repo}/hooks/{hook_id}`, `DELETE /repos/{owner}/{repo}/hooks/{hook_id}`), which is exposed via `gh api` (docs: https://docs.github.com/en/rest/webhooks/repos#create-a-repository-webhook).
-- Webhook event `workflow_run` is fired for `workflow_dispatch` runs and delivers `workflow_run.id`, `workflow_run.run_number`, `workflow_run.status`, and the human-readable run name (docs: https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#workflow_run).
-- Payloads are HMAC signed with `X-Hub-Signature-256` when a shared secret is configured, enabling local verification with standard tooling (`openssl`, `python` `hmac`) as recommended by GitHub (docs: https://docs.github.com/en/webhooks-and-events/webhooks/securing-your-webhooks).
-- Existing automation already tags workflow `run-name` with the correlation UUID (`Dispatch Webhook (<uuid>)`), so webhook payloads will naturally contain the correlation signal needed to associate events with local metadata.
-- No additional GitHub features are required; operators already authenticate with `gh` (Sprint 0) and have workflows plus run-storage directories (Sprints 1 and 3). The only new dependency is the ability to manage repository webhooks and process JSON payloads, both achievable with shell + Python that are presently in use.
+- GitHub repository webhooks can be managed via the REST API exposed by the CLI (`gh api repos/:owner/:repo/hooks`). Creating a hook that listens to `workflow_run` events requires only a target URL and the event list (docs: https://docs.github.com/en/rest/webhooks/repos#create-a-repository-webhook).
+- `workflow_run` payloads contain the numeric `workflow_run.id`, the workflow name, and the run name (which already embeds the correlation UUID produced by Sprint 1 tooling).
+- Because this sprint is a demo, we can operate without HMAC secrets—GitHub happily delivers unsigned payloads when no secret is provided.
+- Existing tooling already writes metadata to `runs/<correlation_id>.json`. We can append the webhook-provided `run_id` to the same file and drop raw payloads under `runs/<correlation_id>/webhook/`.
+- Dependencies (`gh`, `jq`, `python3`) are already part of previous sprints, so no extra setup is needed.
 
 ### Design
 
-#### Webhook provisioning tooling
+#### Webhook setup helper
 
-- Add `scripts/manage-actions-webhook.sh` to create, inspect, and remove repository webhooks targeting `WEBHOOK_URL`. Subcommands:
+- Add `scripts/manage-actions-webhook.sh` with three subcommands:
+  - `register`: Requires `WEBHOOK_URL` env var (or `--webhook-url`). Calls `gh api repos/:owner/:repo/hooks -f name=web -F active=true -F events[]=workflow_run -F config.url=<url> -F config.content_type=json`. Stores the resulting hook id in `runs/_webhook_hook.json` for later use and prints friendly instructions.
+  - `status`: Reads the stored hook id (if present) and prints current webhook details via `gh api repos/:owner/:repo/hooks/<id>`.
+  - `unregister`: Deletes the stored hook id via `gh api repos/:owner/:repo/hooks/<id> -X DELETE` and removes the local file. All metadata lives under `runs/`, which is already gitignored, keeping things simple.
+- The script performs only basic checks (ensure `gh`, `jq`, `WEBHOOK_URL`, and stored id exist) and outputs plain text summaries—no secrets, no signature handling.
 
-  - `register`: Requires `WEBHOOK_URL` and either `GITHUB_WEBHOOK_SECRET` (env) or `--secret-file <path>`. Generates a 64-hex HMAC secret when none exists, stores it in `.webhook/webhook-secret` (gitignored) for reuse, and invokes `gh api` to create a webhook listening on `workflow_run` and `workflow_job` events with `content_type=json`. The created hook id and metadata are saved to `.webhook/active-hook.json` (gitignored).
-  - `status`: Uses stored metadata to call `gh api repos/:owner/:repo/hooks/<id>` and display current configuration, verifying that the endpoint matches `WEBHOOK_URL`.
-  - `unregister`: Deletes the hook and cleans local metadata. Operates idempotently by checking whether metadata exists before deleting.
-- The script will validate prerequisites (`gh`, `jq`, `python3`, `openssl`) via helper checks, reuse the repository name via `gh repo view --json nameWithOwner`, and refuse to overwrite existing hooks unless `--force` is provided. By persisting metadata outside tracked files we avoid committing secrets while ensuring repeatable operator workflows.
+#### Payload processing
 
-#### Event ingestion workflow
+- Add `scripts/process-workflow-webhook.sh` that ingests a payload copied from the webhook receiver (stdin or `--file <path>`). Steps:
+  1. Parse JSON with `jq` and confirm the top-level key `workflow_run` exists. If a different event is supplied, print a warning and exit.
+  2. Extract `workflow_run.id`, `workflow_run.run_attempt`, `workflow_run.status`, and `workflow_run.name`.
+  3. Derive the correlation UUID from the run name pattern `Dispatch Webhook (<uuid>)`; if the pattern is absent, flag `"correlation_id": null`.
+  4. Write the raw payload into `runs/<correlation_id_or_unknown>/webhook/<timestamp>.json`, creating directories on demand.
+  5. Update (or create) `runs/<correlation_id>.json` with the fields:
+     ```json
+     {
+       "run_id": "...",
+       "correlation_id": "...",
+       "workflow": "...",
+       "repo": "...",
+       "stored_at": "...",
+       "webhook_run_id": "...",
+       "webhook_status": "...",
+       "webhook_attempt": ...
+     }
+     ```
+     When the file already exists (from Sprint 1 polling), merge the new keys without disturbing earlier content.
+  6. Emit a one-line JSON summary `{ "run_id": ..., "correlation_id": ..., "status": ... }` to stdout for quick confirmation.
+- The script deliberately skips authentication checks or signature validation—operators simply download payloads from services like webhook.site and feed them in.
 
-- Add `scripts/process-workflow-webhook.sh` to ingest webhook payloads captured from `WEBHOOK_URL`. Inputs:
+#### Trigger helper tweak
 
-  - Payload source: `--file <path>` or default stdin so operators can paste raw JSON (e.g., download from webhook.site).
-  - Optional headers: `--signature <value>` and `--delivered <id>` allow the script to verify HMAC and record delivery identifiers.
-  - Optional override: `--runs-dir` to specify storage root (defaults to `runs`).
-- Processing steps:
-
-  1. Load secret from `.webhook/webhook-secret` (or `--secret-file`/env) to verify `X-Hub-Signature-256`. If verification fails the script warns and exits non-zero unless `--skip-verify` is passed (to accommodate webhook.site where secrets may be absent).
-  2. Parse JSON to ensure it is a `workflow_run` event, extract `workflow_run.id`, `workflow_run.name`, `workflow_run.run_attempt`, and `workflow_run.status`.
-  3. Derive correlation id by parsing the run name: when the pattern `Dispatch Webhook (<uuid>)` is present, capture `<uuid>`; otherwise fall back to `null`.
-  4. Write the canonical payload to `runs/<correlation|unknown>/webhook/events/<timestamp>-<delivery>.json` and append a compact summary row to `runs/<correlation|unknown>/webhook/index.json` capturing run id, attempt, status, timestamp, delivery id, and signature validity.
-  5. When a correlation id is detected and the `runs/<uuid>.json` metadata file exists (from Sprint 1 tooling), update it in-place to include `"webhook_run_id": "<id>"` and `"webhook_deliveries": [...]` (using `jq` to preserve prior keys). If metadata is absent, create `runs/webhook_orphans/<run_id>.json` so operators can reconcile later.
-  6. Emit concise stdout JSON: `{ "correlation_id": "...", "run_id": "...", "status": "...", "verified": true }`, enabling downstream automation or manual confirmation.
-
-- The script will also surface guidance when a webhook payload corresponds to `workflow_job` events (in case the webhook is configured to send them), encouraging the operator to re-run with the correct event type.
-
-#### Correlation-first dispatch helper
-
-- Extend `scripts/trigger-and-track.sh` with a `--webhook-only` flag that skips polling `gh run list` and instead writes the generated correlation UUID plus dispatch metadata to `runs/<uuid>.json` with a placeholder `run_id: null`. The operator can then execute `scripts/process-workflow-webhook.sh` upon receiving the webhook to populate `run_id`. Existing behavior remains default to avoid regressions; the new mode provides a minimal path that mirrors environments where webhook delivery is the authoritative source.
-- Add companion utility `scripts/wait-for-webhook.sh` that monitors `runs/<uuid>/webhook/events/` for a new payload (with configurable timeout) and prints the first verified `run_id`. This enables automated demos where the operator syncs webhook.site payloads to disk (e.g., via copy/paste or curl download) and wants local tooling to react once the file appears.
-
-#### Documentation and storage alignment
-
-- Update operator documentation (Sprint 7 implementation notes and tests README) with the new workflow:
-
-  1. Run `scripts/manage-actions-webhook.sh register` to configure GitHub’s webhook pointing to `WEBHOOK_URL`.
-  2. Trigger workflow using `scripts/trigger-and-track.sh --webhook-only --store-dir runs`.
-  3. When webhook.site receives the payload, download or paste it into a file and process with `scripts/process-workflow-webhook.sh --file payload.json`.
-  4. Optionally invoke `scripts/wait-for-webhook.sh --correlation-id <uuid>` to automate detection.
-
-- Introduce `.webhook/` directory (gitignored) to store secrets and hook metadata, ensuring we do not leak credentials while keeping reproducible local state.
-- Maintain compatibility with earlier sprint artifacts by only appending data to `runs/<uuid>.json` and storing additional files in dedicated `webhook/` subdirectories.
+- Extend `scripts/trigger-and-track.sh` with a `--webhook-only` flag. When enabled:
+  - Dispatch workflow exactly as today but skip the polling loop.
+  - Store metadata in `runs/<correlation_id>.json` with `run_id: null` and a note like `"webhook_pending": true`.
+  - Print the correlation identifier so operators know which payload to associate when the webhook arrives.
+- Existing behavior remains the default, letting users choose between polling and webhook-based correlation.
 
 ### Validation
 
-- Static validation: `shellcheck` on all new/modified scripts; ensure `actionlint` still passes (workflows untouched).
-- Manual end-to-end test (requires GitHub infrastructure and reachable `WEBHOOK_URL`):
-
-  1. Register webhook with `scripts/manage-actions-webhook.sh register`.
-  2. Dispatch workflow using `scripts/trigger-and-track.sh --webhook-only --store-dir runs`.
-  3. Capture webhook payload from the configured endpoint, save as `webhook.json`, and process via `scripts/process-workflow-webhook.sh --file webhook.json`.
-  4. Confirm the script outputs the `run_id`, updates `runs/<uuid>.json` with `webhook_run_id`, and stores the payload under `runs/<uuid>/webhook/events/`.
-  5. Optionally run the existing polling mode to verify the webhook-provided run id matches the polled one.
-- Parallel validation: trigger multiple dispatches in quick succession (distinct shells) and ensure each webhook payload is mapped to the correct correlation id, with summaries recorded separately.
+- Static checks: run `shellcheck` on all new or modified scripts; ensure workflows still pass `actionlint`.
+- Manual demo (GitHub-hosted runners required):
+  1. `WEBHOOK_URL=https://webhook.site/<id> scripts/manage-actions-webhook.sh register`
+  2. `scripts/trigger-and-track.sh --webhook-only --store-dir runs --webhook-url "$WEBHOOK_URL"`
+  3. Save the webhook payload from the receiver to `payload.json`.
+  4. `scripts/process-workflow-webhook.sh --file payload.json`
+  5. Inspect `runs/<correlation_id>.json` to confirm the injected `run_id` matches the payload.
+- Optional: run the trigger helper without `--webhook-only` to show the traditional polling approach still works.
 
 ### Risks and mitigations
 
-- **External endpoint accessibility**: GitHub must reach `WEBHOOK_URL`. Mitigation: document requirement to use public services (webhook.site, ngrok) and provide `--skip-verify` flag for cases where HMAC secrets are infeasible.
-- **Secret management**: Automatically generated secrets must not be committed. Mitigation: store in gitignored `.webhook/` directory and print reminders for operators to back up securely.
-- **Payload delivery timing**: Webhook delivery may lag behind dispatch. Mitigation: `scripts/wait-for-webhook.sh` will allow configurable timeout and logging so delays are visible, and operators can fall back to existing polling if needed.
-- **Event filtering**: Repository webhooks deliver multiple event types. Mitigation: `scripts/process-workflow-webhook.sh` validates event `action` and aborts when unrelated payloads are supplied, preventing erroneous metadata updates.
+- **Webhook delivery delays**: Payload might arrive after the polling timeout. Mitigation: design keeps existing polling flow available; documentation will encourage patience or fall back to polling.
+- **Incorrect payload pasted**: Without signature checks, users could paste unrelated JSON. Mitigation: script clearly warns when `workflow_run` is missing or correlation cannot be derived.
+- **Hook drift**: If someone manually deletes or edits the webhook in GitHub, local metadata becomes stale. Mitigation: `status` subcommand surfaces current hook info so operators can re-register quickly.

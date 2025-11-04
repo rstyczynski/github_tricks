@@ -82,8 +82,7 @@ The document has been updated. Confirm whether everything is now clear or specif
 
 Once the plan is satisfactory:
 
-1. Change the Phase's inception status token to `Accepted`.
-2. Summarize review loop, and commit
+1. Summarize review loop, and commit
 
 ```prompt
 Confirm your understanding, and summarize this conversation in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
@@ -159,7 +158,7 @@ Once implementation is complete and verified through review:
 4. Summarize review loop, and commit
 
 ```prompt
-Confirm completion of the implementation, and summarize the discussion in `progress/construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
+Confirm completion of the implementation, and summarize the discussion in `progress/construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions. Do not change any other files!
 ```
 
 ## Interventions

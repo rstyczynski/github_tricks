@@ -75,6 +75,10 @@ TODO
 
 Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API to validate if logs are supplied during run. Run long running workflow (the one from this project) and use above API to get log few times during a run. Having increasing logs is a proof that this API may be used for incremental log retrieval.
 
+### GH-11. Workflow Webhook as a tool to get run_id
+
+Validate working model of a webhook informing about run_id for a dispatched workflow. Webhook triggering systems must be the one provided by GitHub API, not the custom one. You can configure receiving endpoint by env's WEBHOOK_URL.
+
 ### GH-999. Template
 
 TODO
@@ -157,3 +161,11 @@ Reopen of Sprint 2 failure with hypothesis that GH-10 solves the requirement. Th
 Backlog Items:
 
 * GH-10. Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API
+
+### Sprint 7
+
+Status: Failed
+
+Backlog Items:
+
+* GH-11. Workflow Webhook as a tool to get run_id

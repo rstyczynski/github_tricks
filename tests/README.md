@@ -70,3 +70,24 @@ jq '.measurements' tests/correlation-results.json
 - Wrapper scripts provide sensible defaults for running benchmarks
 - Both benchmarks require real GitHub infrastructure and authenticated `gh` CLI
 - Webhook endpoint must be obtained from https://webhook.site before running tests
+
+## Sprint 7: Webhook Correlation Demo
+
+```bash
+# Register webhook (stores metadata under runs/)
+export WEBHOOK_URL=https://webhook.site/<your-unique-id>
+scripts/manage-actions-webhook.sh register
+
+# Trigger workflow without polling; capture the printed correlation id
+scripts/trigger-and-track.sh \
+  --webhook-url "$WEBHOOK_URL" \
+  --webhook-only \
+  --store-dir runs
+
+# Download the webhook payload from webhook.site and save it as payload.json
+
+# Process payload to update runs/<correlation>.json with run_id
+scripts/process-workflow-webhook.sh --file payload.json
+```
+
+Inspect `runs/<correlation>.json` and `runs/<correlation>/webhook/` to confirm the webhook-sourced identifiers were recorded.

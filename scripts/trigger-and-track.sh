@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--workflow <file>] [--store-dir <dir>] [--input key=value] [--json-only]
+Usage: trigger-and-track.sh --webhook-url <url> [--timeout <seconds>] [--interval <seconds>] [--ref <branch>] [--workflow <file>] [--store-dir <dir>] [--input key=value] [--json-only] [--webhook-only]
 
 Triggers the dispatch-webhook workflow and waits for the GitHub run that emits the provided correlation token.
 Outputs JSON containing the run_id and correlation_id.
@@ -55,6 +55,7 @@ workflow_file="dispatch-webhook.yml"
 workflow_name=""
 store_dir=""
 json_only=false
+webhook_only=false
 declare -a extra_inputs=()
 
 while [[ $# -gt 0 ]]; do
@@ -89,6 +90,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --json-only)
       json_only=true
+      shift
+      ;;
+    --webhook-only)
+      webhook_only=true
       shift
       ;;
     -h|--help)
@@ -176,6 +181,40 @@ else
     printf '%s\n' "${dispatch_output}" >&2
     exit 1
   fi
+fi
+
+if [[ "${webhook_only}" == true ]]; then
+  log "Webhook-only mode: waiting for incoming webhook payload."
+  if [[ -n "${store_dir}" ]]; then
+    mkdir -p "${store_dir}"
+    output_file="${store_dir}/${correlation_id}.json"
+    stored_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    jq -n \
+      --arg correlation_id "${correlation_id}" \
+      --arg branch "${ref}" \
+      --arg workflow "${workflow_file}" \
+      --arg repo "${repo}" \
+      --arg stored_at "${stored_at}" \
+      '{
+        run_id: null,
+        correlation_id: $correlation_id,
+        branch: $branch,
+        workflow: $workflow,
+        repo: $repo,
+        stored_at: $stored_at,
+        webhook_pending: true
+      }' >"${output_file}"
+    log "Stored placeholder metadata at ${output_file}"
+  fi
+
+  result_json="$(jq -n --arg correlation_id "${correlation_id}" '{run_id: null, correlation_id: $correlation_id}')"
+  if [[ "${json_only}" == true ]]; then
+    printf '%s\n' "${result_json}"
+  else
+    printf '%s\n' "${result_json}"
+    log "Use process-workflow-webhook.sh after receiving the webhook to resolve run_id."
+  fi
+  exit 0
 fi
 
 found_run=""
