@@ -10,8 +10,8 @@ Status: Progress
   - `--interval` (default 5s) and `--max-samples` (default 12) control sampling cadence.
   - `--run-id` / `--correlation-id` reuse existing runs; otherwise the tool triggers a fresh execution (webhook defaults to `https://example.invalid/probe` if omitted).
   - `--json` emits a machine-readable summary with metrics (first sample containing logs, first content change, final job status) for automated analysis.
-- Each sample records whether new content appeared by hashing extracted log payloads via Python; the human-readable mode prints a compact table and points to the stored artifacts for manual inspection.
-- Added defensive polling: if the run reaches `completed` yet the jobs API still returns no entries or surfaces an error message, the script exits gracefully and reports the condition instead of waiting indefinitely. Removed `--silent` from the jobs API poll so results are actually captured.
+- Each sample records whether new content appeared by hashing extracted log payloads via Python; plain-text responses are persisted as `.log` files, while compressed payloads (zip/gzip) are unpacked under `runs/<correlation>/job-logs/sample_<n>/` for later inspection. Human-readable mode prints a compact table pointing to these artifacts.
+- Added defensive polling: if the run reaches `completed` yet the jobs API still returns no entries or surfaces an error message, the script exits gracefully and reports the condition instead of waiting indefinitely. Removed `--silent` from the jobs API poll so results are captured, and switched to streaming downloads (`gh api > file`) to avoid unsupported flags. Repeated 404s while the job is still starting are tolerated until logs become available.
 
 ## Testing
 
@@ -33,7 +33,8 @@ scripts/probe-job-logs.sh \
   --input sleep_seconds=5 \
   --interval 5 \
   --max-samples 15 \
-  --runs-dir runs
+  --runs-dir runs \
+  --json
 ```
 
-- Inspect `runs/<correlation>/job-logs/samples.json` to confirm whether in-progress samples contain non-zero log data before completion; the table output highlights when (or if) new content appears.
+- Inspect `runs/<correlation>/job-logs/samples.json` to confirm whether in-progress samples contain non-zero log data before completion; the JSON (or table mode) highlights when new content first appears, and `.log` files under each sample directory show the captured output.

@@ -206,7 +206,7 @@ job_id=""
 download_job_logs() {
   local job_identifier="$1"
   local destination="$2"
-  if gh api "repos/${repo}/actions/jobs/${job_identifier}/logs" --method GET --silent --output "${destination}.tmp" >/dev/null 2>&1; then
+  if gh api "repos/${repo}/actions/jobs/${job_identifier}/logs" --method GET > "${destination}.tmp"; then
     mv "${destination}.tmp" "${destination}"
     return 0
   fi
@@ -214,33 +214,57 @@ download_job_logs() {
   return 1
 }
 
-python_analyse_logs() {
-  local directory="$1"
-  python3 - "${directory}" <<'PY'
+python_process_log() {
+  local source_path="$1"
+  local extract_root="$2"
+  python3 - "${source_path}" "${extract_root}" <<'PY'
 import hashlib
+import io
 import pathlib
 import sys
+import zipfile
+import gzip
 
-root = pathlib.Path(sys.argv[1])
+source = pathlib.Path(sys.argv[1])
+extract_root = pathlib.Path(sys.argv[2])
+extract_root.mkdir(parents=True, exist_ok=True)
+
+data = source.read_bytes()
 digest = hashlib.sha256()
 total_bytes = 0
 total_lines = 0
+mode = "text"
 
-for path in sorted(root.rglob('*')):
-    if not path.is_file():
-        continue
-    rel = path.relative_to(root).as_posix().encode()
-    digest.update(rel)
-    digest.update(b'\0')
-    data = path.read_bytes()
-    total_bytes += len(data)
+def process_bytes(name: str, payload: bytes) -> None:
+    global total_bytes, total_lines
+    target = extract_root / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(payload)
+    digest.update(name.encode("utf-8", "ignore"))
+    digest.update(b"\0")
+    digest.update(payload)
+    total_bytes += len(payload)
     try:
-        total_lines += data.decode('utf-8', errors='ignore').count('\n')
+        total_lines += payload.decode("utf-8", errors="ignore").count("\n")
     except Exception:
         pass
-    digest.update(data)
 
-print(digest.hexdigest(), total_bytes, total_lines)
+if data.startswith(b"PK\x03\x04"):
+    mode = "zip"
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        for member in archive.infolist():
+            if member.is_dir():
+                continue
+            payload = archive.read(member)
+            process_bytes(member.filename, payload)
+elif data.startswith(b"\x1f\x8b"):
+    mode = "gzip"
+    payload = gzip.decompress(data)
+    process_bytes("log.txt", payload)
+else:
+    process_bytes("log.txt", data)
+
+print(mode, digest.hexdigest(), total_bytes, total_lines)
 PY
 }
 
@@ -290,32 +314,32 @@ while (( sample_index <= max_samples )); do
   fi
 
   sample_label="$(printf 'sample_%02d' "${sample_index}")"
-  zip_path="${samples_dir}/${sample_label}.zip"
+  artifact_path="${samples_dir}/${sample_label}.log"
   extract_dir="${samples_dir}/${sample_label}"
   timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-  if ! download_job_logs "${job_id}" "${zip_path}"; then
+  if ! download_job_logs "${job_id}" "${artifact_path}"; then
     log "Warning: failed to download logs for job ${job_id}; retrying after interval."
     sleep "${interval}"
     continue
   fi
 
-  zip_size="$(ru_file_size_bytes "${zip_path}")"
+  artifact_size="$(ru_file_size_bytes "${artifact_path}")"
   rm -rf "${extract_dir}"
   mkdir -p "${extract_dir}"
 
+  format="text"
   checksum=""
   log_bytes=0
   log_lines=0
 
-  if (( zip_size > 0 )); then
-    if unzip -qq "${zip_path}" -d "${extract_dir}" >/dev/null 2>&1; then
-      analysis="$(python_analyse_logs "${extract_dir}")" || analysis=""
-      if [[ -n "${analysis}" ]]; then
-        checksum="$(awk '{print $1}' <<<"${analysis}")"
-        log_bytes="$(awk '{print $2}' <<<"${analysis}")"
-        log_lines="$(awk '{print $3}' <<<"${analysis}")"
-      fi
+  if (( artifact_size > 0 )); then
+    analysis="$(python_process_log "${artifact_path}" "${extract_dir}")" || analysis=""
+    if [[ -n "${analysis}" ]]; then
+      format="$(awk '{print $1}' <<<"${analysis}")"
+      checksum="$(awk '{print $2}' <<<"${analysis}")"
+      log_bytes="$(awk '{print $3}' <<<"${analysis}")"
+      log_lines="$(awk '{print $4}' <<<"${analysis}")"
     fi
   fi
 
@@ -333,11 +357,12 @@ while (( sample_index <= max_samples )); do
     --arg conclusion "${job_conclusion}" \
     --arg started "${job_started}" \
     --arg completed "${job_completed}" \
-    --arg zip_path "$(file_basename "${zip_path}")" \
-    --arg zip_size_str "${zip_size}" \
+    --arg artifact "$(file_basename "${artifact_path}")" \
+    --arg artifact_size_str "${artifact_size}" \
     --arg log_bytes_str "${log_bytes}" \
     --arg log_lines_str "${log_lines}" \
     --arg checksum "${checksum}" \
+    --arg format "${format}" \
     --argjson new_content "${new_content}" \
     '{
        sample: $sample,
@@ -347,19 +372,20 @@ while (( sample_index <= max_samples )); do
        conclusion: (if $conclusion != "" then $conclusion else null end),
        started_at: (if $started != "" then $started else null end),
        completed_at: (if $completed != "" then $completed else null end),
-       zip_path: $zip_path,
-       zip_size_bytes: ($zip_size_str | tonumber),
+       artifact_path: $artifact,
+       artifact_size_bytes: ($artifact_size_str | tonumber),
        log_bytes: ($log_bytes_str | tonumber),
        log_lines: ($log_lines_str | tonumber),
        checksum: (if $checksum != "" then $checksum else null end),
+        format: $format,
        new_content: $new_content
      }')
 
   samples_json="$(jq -s '.[0] + [.[1]]' <(printf '%s\n' "${samples_json}") <(printf '%s\n' "${sample_json}"))"
 
   if [[ "${output_json}" != true ]]; then
-    printf 'Sample %-2d | status=%-11s | zip=%6s bytes | log=%6s bytes | new=%s\n' \
-      "${sample_index}" "${job_status:-unknown}" "${zip_size}" "${log_bytes}" "${new_content}" >&2
+    printf 'Sample %-2d | status=%-11s | artifact=%6s bytes | log=%6s bytes | new=%s\n' \
+      "${sample_index}" "${job_status:-unknown}" "${artifact_size}" "${log_bytes}" "${new_content}" >&2
   fi
 
   sample_index=$((sample_index + 1))
@@ -410,11 +436,11 @@ summary_json=$(jq -n \
 if [[ "${output_json}" == true ]]; then
   printf '%s\n' "${summary_json}"
 else
-  printf '\n%-6s %-12s %-12s %-12s %-5s %s\n' "Sample" "Status" "Zip(bytes)" "Log(bytes)" "New?" "Timestamp"
-  printf '%-6s %-12s %-12s %-12s %-5s %s\n' "-----" "------------" "------------" "------------" "-----" "-------------------------"
-  jq -r '.samples[] | "\( .sample )\t\( .status // "-" )\t\( .zip_size_bytes )\t\( .log_bytes )\t\( .new_content )\t\( .timestamp )"' <<<"${summary_json}" |
-    while IFS=$'\t' read -r sample status zip_bytes log_bytes new_flag ts; do
-      printf '%-6s %-12s %-12s %-12s %-5s %s\n' "${sample}" "${status}" "${zip_bytes}" "${log_bytes}" "${new_flag}" "${ts}"
+  printf '\n%-6s %-12s %-15s %-12s %-5s %s\n' "Sample" "Status" "Artifact(bytes)" "Log(bytes)" "New?" "Timestamp"
+  printf '%-6s %-12s %-15s %-12s %-5s %s\n' "-----" "------------" "---------------" "------------" "-----" "-------------------------"
+  jq -r '.samples[] | "\( .sample )\t\( .status // "-" )\t\( .artifact_size_bytes )\t\( .log_bytes )\t\( .new_content )\t\( .timestamp )"' <<<"${summary_json}" |
+    while IFS=$'\t' read -r sample status artifact_bytes log_bytes new_flag ts; do
+      printf '%-6s %-12s %-15s %-12s %-5s %s\n' "${sample}" "${status}" "${artifact_bytes}" "${log_bytes}" "${new_flag}" "${ts}"
     done
   printf '\nStored samples under %s\n' "${samples_dir}" >&2
   printf 'Summary written to %s\n' "${samples_file}" >&2
