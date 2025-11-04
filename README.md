@@ -76,4 +76,16 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 ## Documentation
 
-See `SRS.md` for full specification and `rules/` for development guidelines.
+**Core Documentation:**
+- `SRS.md` - Software Requirements Specification and backlog
+- `PLAN.md` - Sprint iteration plans and status
+- `rules/` - Development process guidelines and rules
+
+**Sprint Progress Tracking:**
+- `progress/` - Complete audit trail of all sprints (52 documents):
+  - `sprint_N_design.md` - Design documents for each sprint
+  - `sprint_N_implementation.md` - Implementation notes and summaries
+  - `inception_sprint_N_*.md` - Requirements definition phase logs
+  - `elaboration_sprint_N_*.md` - Design phase chat logs
+  - `construction_sprint_N_*.md` - Implementation phase chat logs
+  - `*_review_*.md` - Product Owner review feedback
