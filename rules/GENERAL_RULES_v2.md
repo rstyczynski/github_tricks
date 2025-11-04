@@ -1,13 +1,5 @@
-# GitHub Development Rules Contract
 
-version: 3
-status: review
-
-This document defines development rules that are a contract between the Product Owner and the Implementor with the goal to be used in agentic coding. Always confirm with the agent clarity of the rules expressed here with the following prompt:
-
-```prompt
-Obey the `rules/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor, especially for agentic agent acting as GitHub Implementor. You HAVE TO obey this document without exceptions. Confirm or enumerate points not clear or wrong form your perspective.
-```
+# General cooperation rules
 
 ## General rules
 
@@ -18,10 +10,6 @@ The project is divided into Sprints defined under `Implementation Sprints` chapt
 Specified SRS document provides comprehensive requirements related to the subject, explained especially in `Implementation Plan` chapter with enumerated `Sprints` as sub chapters referring to `Backlog Items` listed in `Backlog` chapter.
 
 All aspects of the implementation incl. running tests is added to `Implementation notes` chapter under separated chapter.  
-
-## Instructions for the Implementor
-
-The Implementor knows on an expert level GitHub and any GitHub Collection that is specified in the `Implementation Plan`.
 
 The Implementor is expected to review the entire document, with special attention to the `Implementation Plan` chapter for the current `Sprint`. Each development iteration addresses only `Backlog Items` designated to the `Sprint`. Other `Backlog Items` serve as source of valuable context information, but only the one indicated by the Product Owner should be actively designed and developed in the next step.
 
@@ -113,32 +101,102 @@ stateDiagram-v2
     Proposed --> Rejected
 ```
 
-### Testing guidelines
+## Design
 
-1. Prefer `act` to test the functionality locally.
+Design is owned by the Implementor and is stored in `progress/sprint_<id>_design.md` file for each Sprint.
 
-2. Workflows are tested on real GitHub infrastructure with `workflow_dispatch`
+Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES*`. Implementor NEVER touches the status, but his actions are driven by the status.
 
-3. Tests are performed for happy paths, and for special cases.
+General template for the file:
 
-4. Tests verifies behavior in cases out of the context e.g. illegal parameter value.
+```markdown
+# Sprint <id> - design
 
-### Definition of done
+## <Backlog Item A>
 
-1. Requirements implemented
+Status: Progress
 
-2. GitHub syntax confirmed by `actionlint`
+Design details for <Backlog Item A>
 
-3. Implementation tested with `act` and/or real GitHub infrastructure with `workflow_dispatch`
+## <Backlog Item B>
 
-4. Design documented
+Status: Progress
 
-5. User documentation in place
+Design details for <Backlog Item B>
+```
 
-6. Simple example in place
+## Implementation notes
 
-## Tools and libraries
+Implementations notes is owned by the Implementor and is stored in `progress/sprint_<id>_implementation.md` file for each Sprint.
 
-1. Always use official GitHub access libraries
+Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES*`. Implementor NEVER touches the status, but his actions are driven by the status.
 
-2. You may use Ansible collection if one is available from GitHub
+General template for the file:
+
+```markdown
+# Sprint <id> - Implementation Notes
+
+## <Backlog Item A>
+
+Status: Progress
+
+Design details for <Backlog Item A>
+
+## <Backlog Item B>
+
+Status: Progress
+
+Design details for <Backlog Item B>
+```
+
+## Feedback from the Implementor
+
+Feedback from the Implementor is owned by the Implementor and is stored in `progress/sprint_<id>_feedback.md` and `progress/sprint_<id>_openquestions.md` files for each Sprint.
+
+The file `progress/sprint_<id>_feedback.md` is owned by the Implementor and contains proposed changes to the initial plan. Use subchapter following the Backlog Items's name. The Product Owner, after accepting the feedback, moves proposals to the implementation plan trough Backlog list. You can only append to this chapter. Never edit already existing paragraphs.
+
+Template of the file is following:
+
+```markdown
+# Sprint <id> - Feedback
+
+## <Proposal A>
+Status: None
+```
+
+The file `progress/sprint_<id>_openquestions.md` contains clarification requests from the Implementor. Use subchapter following the problem's name. The Product Owner, after accepting the question, answers here. You can append to this chapter. Never edit already existing paragraphs.
+
+Template of the file is following:
+
+```markdown
+# Sprint <id> - More information needed
+
+## <Question A>
+Status: None
+Problem to clarify: None
+Answer: None
+```
+
+## Appendix A. Document rules
+
+### Editing
+
+1. Use Markdown
+
+2. Do not use any indention under chapters. Each paragraph starts always at column zero. Exception are enumerations.
+
+3. Always add an empty line before any code blocks, enumerations. Follow Markdown linting rules.
+
+4. Always add an empty line after chapters, list headers. Follow Markdown linting rules.
+
+### Content ownership
+
+1. Any change in already closed parts or the implementation plan go through `Proposed changes` and `More information needed` process / chapters.
+
+2. Never edit anything but `Design` chapter describing `Implementation Sprint`. Never edit other Sprints' design chapters.
+
+3. Design chapters are always on 3rd level under Design chapter.
+
+## Appendix B. Git rules
+
+Refer to GIT_RULES_v1.md for git repository rules.

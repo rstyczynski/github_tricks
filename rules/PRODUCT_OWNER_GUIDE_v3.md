@@ -38,12 +38,7 @@ Each section contains prompt templates you can use directly with your AI Agent. 
 
 Cooperation workflow is presented on the following diagram:
 
-<!-- Check if the image is correctly imported and displays as expected. 
-The relative path 'images/agentic_cooperation_v1.png' assumes this file is being viewed with access to the 'images/' directory at the same level. 
-If the image does not display, ensure the file exists at the specified location and the Markdown viewer supports local images. -->
-
 ![Agentic Cooperation Workflow](images/agentic_cooperation_v1.png)
-
 
 ## Contracting
 
@@ -80,7 +75,9 @@ The Product Owner leads the design and implementation process. The Agent is trea
 Once the SRS document is ready, the Product Owner commands agent to read the document. This is a **starting point** of any subsequent sprints to be executed after execution break, having other sprint ready.
 
 ```prompt
-We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables.
+We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables. 
+
+Whe al is clear summarize your understanding in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
 ```
 
 When the SRS is updated during this phase, the agent is asked to read it again.
@@ -115,12 +112,12 @@ The design section has been updated. Confirm whether all requested changes are n
 
 Once the design is ok:
 
-1. Change the Phase's elaboration (desing) status token to `Accepted`.
+1. Change the Phase's elaboration (design) status token to `Accepted`.
 2. Change the Phase's inception (implementation plan) status token to `Designed`.
 3. Summarize review loop, and commit
 
 ```prompt
-Confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
+Confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention. Do not change any other documents!
 ```
 
 ## Construction
