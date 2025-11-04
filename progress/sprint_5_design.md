@@ -1574,6 +1574,7 @@ The GitHub API ecosystem is mature with well-maintained libraries for all major 
 #### hub4j/github-api
 
 **Repository**: https://github.com/hub4j/github-api
+**Coordinates**: `org.kohsuke.github:github-api` (Maven Central, latest 1.x release)
 **Maturity**: 1.1K stars, active maintenance (last release recent), Apache 2.0 license
 **Documentation**: https://github-api.kohsuke.org/
 
@@ -1637,7 +1638,9 @@ if (matchedRun != null) {
 **Assessment**:
 - **Strengths**: Mature, comprehensive API coverage, intuitive object model
 - **Weaknesses**: Synchronous blocking I/O (no async support), verbose Java syntax
+- **Packaging Notes**: Available on Maven Central (`org.kohsuke.github:github-api`); supports Java 8+, shading optional.
 - **Use Case Fit**: Excellent for Spring Boot services, Jenkins plugins, JVM-based automation
+- **run_id Retrieval**: `GHWorkflow.dispatch(...)` sends the dispatch request and returns `void` (HTTP 204). The caller must subsequently query runs (e.g., `repo.queryWorkflowRuns()...`) and match on the injected correlation token to discover the `run_id`; the library does not synthesize it during dispatch. See the official javadoc for the void signature and the `GHWorkflowTest` fixture (https://github.com/hub4j/github-api/blob/main/src/test/java/org/kohsuke/github/GHWorkflowTest.java) which verifies only the POST request, not a returned ID.
 
 ---
 

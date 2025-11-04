@@ -33,16 +33,19 @@ Conducted comprehensive retrospective of Sprints 0-4, analyzing successes, failu
 5. **Sprint 4 (Benchmarks)**: ✅ Complete success - performance measurement tools with cross-platform fixes
 
 **Overall Assessment**:
+
 - **Delivered Value**: Complete workflow automation toolkit (trigger, correlate, log retrieval, benchmarking)
 - **Technical Quality**: All scripts pass shellcheck/actionlint, cross-platform compatible, comprehensive error handling
 - **Known Limitations**: Real-time log streaming impossible (platform constraint), polling-based correlation (2-5s latency acceptable)
 
 **Key Lessons Learned**:
+
 - **Technical**: API-first feasibility analysis critical, UUID correlation strategy robust, cross-platform testing essential
 - **Process**: Design phase validation prevents late failures, iterative bug fixing effective, semantic commits enable clear history
 - **Architecture**: Modular scripts with JSON interfaces compose well, shared utilities reduce duplication
 
 **Recommendations**:
+
 - GH-6/GH-7 (Cancellation): Use `gh run cancel` CLI command
 - GH-8/GH-9 (Scheduling): Requires external scheduler (cron + gh CLI)
 - Webhook events: Evaluate for push-based notifications vs polling
@@ -107,6 +110,62 @@ Documented GitHub REST/GraphQL API capabilities, validated Sprint 2 failure root
 - `GET /repos/:owner/:repo/actions/runs/:run_id/jobs` - Get job details
 - `GET /repos/:owner/:repo/actions/runs/:run_id/logs` - Download log archive (302 redirect to S3)
 
+**Fire-and-forget Dispatch Semantics**:
+
+- `POST /repos/:owner/:repo/actions/workflows/{workflow_id}/dispatches` (used by `gh workflow run`) is asynchronous and replies with HTTP 204 without a payload, so the caller never receives a `run_id` in the response.
+- GitHub spins up the run after queuing, and the only way to observe the resulting `run_id` is to poll list endpoints such as `GET /repos/:owner/:repo/actions/workflows/{workflow_id}/runs?event=workflow_dispatch&branch=<ref>` or the more general `GET /repos/:owner/:repo/actions/runs?event=workflow_dispatch`.
+- To correlate the fire-and-forget request with the eventual run, clients must inject a unique marker (e.g., UUID in the dispatch `inputs`) and poll until a run exposes the same marker via `github.event.inputs.<name>` or derived metadata inside the workflow.
+- Alternative push-based options exist (workflow_run/webhook events) but they likewise provide correlation data only after GitHub has created the run; none of these mechanisms include the `run_id` in the initial dispatch response.
+- hub4j mirrors this behavior: `GHWorkflow#dispatch` returns `void` (HTTP 204). Application code obtains the `run_id` only after polling `GHWorkflowRun` objects (`GHWorkflowRun#getId()`) and matching on the injected marker. Official docs show the dispatch signature without a return value (https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHWorkflow.html#dispatch(java.lang.String,java.util.Map)), and the library’s own tests (https://github.com/hub4j/github-api/blob/main/src/test/java/org/kohsuke/github/GHWorkflowTest.java) simply verify the POST request without capturing a run ID—any `WorkflowRunResponse.builder(correlationId, runId)` usage comes from consumer code populated after polling.
+
+```python
+#!/usr/bin/env python3
+import os
+import time
+import uuid
+
+import requests
+
+token = os.environ["GITHUB_TOKEN"]
+owner = "octo-org"
+repo = "demo-repo"
+workflow_file = "ci.yml"
+ref = "main"
+correlation_id = uuid.uuid4().hex
+
+headers = {
+    "Authorization": f"Bearer {token}",
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+}
+
+dispatch_url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_file}/dispatches"
+dispatch_payload = {
+    "ref": ref,
+    "inputs": {"correlation_id": correlation_id},
+}
+
+# Assumes the workflow sets run-name to include github.event.inputs.correlation_id so the poller can find it.
+resp = requests.post(dispatch_url, headers=headers, json=dispatch_payload, timeout=10)
+resp.raise_for_status()
+
+runs_url = f"https://api.github.com/repos/{owner}/{repo}/actions/runs"
+poll_params = {"event": "workflow_dispatch", "per_page": 20}
+deadline = time.time() + 120
+
+while time.time() < deadline:
+    poll = requests.get(runs_url, headers=headers, params=poll_params, timeout=10)
+    poll.raise_for_status()
+    for run in poll.json().get("workflow_runs", []):
+        run_name = run.get("name", "")
+        if correlation_id in run_name:
+            print(f"Matched run_id={run['id']} run_url={run['html_url']}")
+            raise SystemExit(0)
+    time.sleep(2)
+
+raise SystemExit("Timeout waiting for GitHub to register the workflow run")
+```
+
 **Sprint 2 Failure Analysis - Definitive Answer**:
 
 **Question**: Can GitHub API provide real-time/streaming access to in-progress workflow logs?
@@ -114,15 +173,17 @@ Documented GitHub REST/GraphQL API capabilities, validated Sprint 2 failure root
 **Answer**: **NO** - Real-time log streaming is impossible via GitHub API.
 
 **Evidence**:
+
 1. REST API log endpoints return HTTP 404 if run not completed
 2. No streaming endpoints (SSE, WebSocket, chunked transfer) exist
-3. GitHub Web UI uses polling (not streaming) for log updates
+3. GitHub Web UI uses polling (not streaming) for log updates: browser DevTools show the page repeatedly issuing `GET https://pipelines.actions.githubusercontent.com/<tenant_id>/<workflow_run_id>/jobs/<job_id>/logs?start=<offset>` requests every ~2-3 seconds; each response returns only the next log chunk before closing the connection, after which the UI increments the `start` cursor and fetches the subsequent batch.
 4. Webhook events (`workflow_run`, `workflow_job`) provide status only, not log content
 5. GraphQL API has no streaming capabilities for Actions logs
 
 **Conclusion**: Sprint 2 (GH-4) failure confirmed as **fundamental GitHub platform limitation**.
 
 **Available but Unused**:
+
 - `POST /repos/:owner/:repo/actions/runs/:run_id/cancel` - Cancel runs (GH-6/GH-7)
 - `POST /repos/:owner/:repo/actions/runs/:run_id/force-cancel` - Force cancel
 - `POST /repos/:owner/:repo/actions/runs/:run_id/rerun` - Re-run all jobs
@@ -131,16 +192,19 @@ Documented GitHub REST/GraphQL API capabilities, validated Sprint 2 failure root
 - Job-specific operations, artifacts API, cache API, secrets management
 
 **Webhook Events**:
+
 - `workflow_run`: Fires on status changes (queued, in_progress, completed) - no logs
 - `workflow_job`: Fires on job status changes - no logs
 - **Trade-off**: Push notifications (<1s latency) vs operational complexity (public endpoint required)
 
 **Rate Limiting**:
+
 - Authenticated: 5,000 requests/hour
 - Our usage: <5% of limit (significant headroom)
 - Current approach sufficient; no optimization needed
 
 **GraphQL API**:
+
 - Advantages: Custom field selection, batch queries, nested relationships
 - Limitations: Actions schema coverage unclear, no streaming, learning curve
 - Recommendation: Explore for future optimization, not critical for current needs
@@ -160,14 +224,17 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 **Libraries Evaluated**:
 
 ### Java
-1. **hub4j/github-api**: 1.1K stars, mature, comprehensive Actions support
+
+1. **hub4j/github-api** (`org.kohsuke.github:github-api`): 1.1K stars, mature, comprehensive Actions support with Maven Central availability
 2. **OkHttp + Direct API**: Full API control, async-ready, more boilerplate
 
 ### Go
+
 1. **google/go-github**: 10.3K stars, Google-maintained, de-facto standard
 2. **hashicorp/go-retryablehttp**: Production-grade retry logic, composable
 
 ### Python
+
 1. **PyGithub**: 7K stars, Pythonic API, widely used
 2. **github3.py**: 1.2K stars, cleaner OO design, smaller community
 
@@ -188,6 +255,7 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 **Shell vs. Library Trade-offs**:
 
 **Use Shell When**:
+
 - Rapid prototyping and experimentation
 - CI/CD pipeline steps (already in shell context)
 - Operator-facing tools with minimal dependencies
@@ -196,6 +264,7 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 - Debugging simplicity preferred
 
 **Use Libraries When**:
+
 - Production services requiring robustness
 - Complex multi-step orchestration with business logic
 - Integration with existing applications (Spring Boot, microservices, Django)
@@ -220,11 +289,14 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
    - Shell: Operator tools, deployment scripts, CI/CD helpers
 
 **Project Retrospective Assessment**:
+
 - **Decision**: Shell-based approach was correct choice
 - **Rationale**: Simple requirements, operator-facing tools, rapid iteration, cross-platform compatibility
 - **Future**: Consider library migration only if adding complex orchestration, web UI, or service integration
+- **Correlation parity**: Library samples enforce the same client-generated UUID approach—hub4j dispatch example seeds `UUID.randomUUID()` before polling (`progress/sprint_5_design.md:1603`), and google/go-github uses `uuid.New().String()` while searching run names (`progress/sprint_5_design.md:1671`); neither SDK auto-generates correlation IDs.
 
 **Migration Considerations**:
+
 - UUID correlation strategy directly applicable to all libraries
 - Polling with timeout translates to library idioms
 - JSON file pattern becomes database/cache in services
@@ -239,12 +311,14 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 ### Research Execution
 
 **Objective 1** (Project Retrospective):
+
 - Reviewed all sprint design, implementation, and chat documentation (26 files)
 - Analyzed each sprint against original backlog requirements
 - Extracted technical and process lessons learned
 - Produced comprehensive assessment with recommendations
 
 **Objective 2** (GitHub CLI):
+
 - Extracted all `gh` command usage via grep analysis
 - Reviewed local `gh --help` outputs for all subcommands
 - Fetched GitHub CLI Manual documentation via WebFetch
@@ -252,6 +326,7 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 - Identified unused capabilities with potential use cases
 
 **Objective 3** (GitHub API):
+
 - Extracted all `gh api` usage patterns from scripts
 - Fetched GitHub REST API documentation via WebFetch
 - Researched Sprint 2 failure root cause (streaming logs)
@@ -259,6 +334,7 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 - Assessed rate limiting and usage patterns
 
 **Objective 4** (Library Survey):
+
 - Reviewed documentation for 6 libraries (2 per language)
 - Evaluated feature coverage for workflow automation
 - Created code examples for workflow trigger and correlation
@@ -268,18 +344,21 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 ### Validation
 
 **Research Quality Checks**:
+
 - ✅ All information sourced from authoritative references (official docs, repos)
 - ✅ Code examples syntactically correct (Java, Go, Python)
 - ✅ Comparative analysis objective (not promotional)
 - ✅ Recommendations actionable and specific
 
 **Completeness Checks**:
+
 - ✅ Objective 1: All sprints (0-4) analyzed with clear success/failure determination
 - ✅ Objective 2: Complete inventory of `gh` commands with gap analysis
 - ✅ Objective 3: Definitive answer on Sprint 2 failure (real-time streaming)
 - ✅ Objective 4: At least 2 libraries per language evaluated with code examples
 
 **Documentation Review**:
+
 - ✅ Design document populated with 1,406 lines of research findings
 - ✅ Clear section headers for navigation
 - ✅ Tables for comparative data
@@ -291,6 +370,7 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 **Note**: Sprint 5 is a research sprint with no code implementation. Traditional testing (shellcheck, GitHub execution) not applicable.
 
 **Research Validation**:
+
 - ✅ Information accuracy verified against official sources
 - ✅ Code examples reviewed for syntax correctness
 - ✅ Comparative analysis cross-checked across multiple sources
@@ -347,12 +427,14 @@ Surveyed major GitHub API libraries for Java, Go, and Python; evaluated feature 
 Sprint 5 successfully delivered comprehensive project review and ecosystem analysis. All four research objectives completed with actionable findings and recommendations.
 
 **Research demonstrates**:
+
 - Current shell-based implementation is appropriate for project scope
 - Sprint 2 failure (real-time streaming) confirmed as platform limitation
 - Future backlog items (GH-6 through GH-9) are achievable with available CLI/API capabilities
 - Library-based alternatives exist but not required for current use cases
 
 **Project is well-positioned** for:
+
 - Implementing remaining backlog items (cancellation, scheduling)
 - Scaling to higher frequencies if needed (GraphQL, webhooks)
 - Migrating to library-based approach if requirements evolve (orchestration, web UI)
