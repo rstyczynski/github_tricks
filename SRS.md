@@ -79,6 +79,12 @@ Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API to vali
 
 Validate working model of a webhook informing about run_id for a dispatched workflow. Webhook triggering systems must be the one provided by GitHub API, not the custom one. You can configure receiving endpoint by env's WEBHOOK_URL.
 
+### GH-12. Use GitHub API to get workflow job phases with status.
+
+Use GitHub API to get workflow job phases with status mimicking `gh run view <run_id>`. Use API or gh utility. Prefer browser based authentication for simplicity. 
+
+TODO
+
 ### GH-999. Template
 
 TODO
@@ -169,3 +175,11 @@ Status: Failed
 Backlog Items:
 
 * GH-11. Workflow Webhook as a tool to get run_id
+
+### Sprint 7
+
+Status: Progress
+
+Backlog Items:
+
+* GH-12. Use GitHub API to get workflow job phases with status.
