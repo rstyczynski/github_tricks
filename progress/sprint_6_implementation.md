@@ -2,7 +2,9 @@
 
 ## GH-10. Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API
 
-Status: Progress
+Status: Failed
+
+Conclusion: GH-10 cannot deliver genuine live (mid-run) log access; GitHub publishes job logs only after completion. Sprint 6 therefore remains failed pending platform support.
 
 - Added `scripts/probe-job-logs.sh`, a helper that triggers (or attaches to) `long-run-logger.yml`, resolves the active job, and captures successive downloads from `GET /repos/:owner/:repo/actions/jobs/<job_id>/logs`. Each sample is stored under `runs/<correlation>/job-logs/` alongside extracted contents and a `samples.json` ledger containing timestamps, job status, archive size, byte/line counts, and checksum comparison for detecting new content.
 - Reused metadata helpers from `scripts/lib/run-utils.sh`, extending the library with `ru_file_size_bytes` for portable file-size retrieval. When no `run_id` is supplied, the probe script delegates to `scripts/trigger-and-track.sh --store-dir <runs_dir>` so correlation metadata is persisted automatically.
@@ -12,6 +14,11 @@ Status: Progress
   - `--json` emits a machine-readable summary with metrics (first sample containing logs, first content change, final job status) for automated analysis.
 - Each sample records whether new content appeared by hashing extracted log payloads via Python; plain-text responses are persisted as `.log` files, while compressed payloads (zip/gzip) are unpacked under `runs/<correlation>/job-logs/sample_<n>/` for later inspection. Human-readable mode prints a compact table pointing to these artifacts.
 - Added defensive polling: if the run reaches `completed` yet the jobs API still returns no entries or surfaces an error message, the script exits gracefully and reports the condition instead of waiting indefinitely. Removed `--silent` from the jobs API poll so results are captured, and switched to streaming downloads (`gh api > file`) to avoid unsupported flags. Repeated 404s while the job is still starting are tolerated until logs become available.
+
+### Findings
+
+- Timed runs demonstrate that `GET /repos/:owner/:repo/actions/jobs/{job_id}/logs` returns persistent `HTTP 404` while the job is `in_progress`, only succeeding immediately after the job transitions to `completed`. For example, correlation `CE7C3B24-DF8E-4281-B836-3F85948B7C21` captured a first sample (`sample_01.log`) at `2025-11-04T11:12:09Z` while the job was reported as `in_progress`; however, the API still delivered a full log archive only after the subsequent poll when the job had already finished (`samples.json` in `runs/CE7C3B24-DF8E-4281-B836-3F85948B7C21/job-logs`).
+- A longer workflow (`sleep_seconds=10`) reproduced the limitation: despite polling every five seconds, downloads failed with repeated 404 responses until the job concluded, at which point the first successful sample (`runs/EE7B0BD0-F5A7-48A2-ACCB-A95485C6E2BD/job-logs/sample_01.log`) showed `status=completed`. Console output from that run (stored in the same directory) provides on-screen evidence of the delay.
 
 ## Testing
 
