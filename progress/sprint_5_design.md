@@ -1112,6 +1112,222 @@ Document GitHub REST/GraphQL API capabilities relevant to workflow automation, v
 - Rate limiting analysis with recommendations
 - Clear identification of unexplored API capabilities
 
+### Research Findings
+
+## 3. GitHub API Capabilities
+
+### 3.1 Current API Usage
+
+| Endpoint | Purpose | Method | Location | Response Used |
+|----------|---------|--------|----------|---------------|
+| `/repos/:owner/:repo/actions/workflows/:file` | Resolve workflow numeric ID | GET | `trigger-and-track.sh` | `.id` field (numeric workflow ID) |
+| `/repos/:owner/:repo/actions/runs` | List workflow runs (via `gh run list`) | GET | `trigger-and-track.sh` | JSON array with run objects |
+| `/repos/:owner/:repo/actions/runs/:run_id` | Get run details | GET | `fetch-run-logs.sh` | Run metadata (status, conclusion, jobs) |
+| `/repos/:owner/:repo/actions/runs/:run_id/jobs` | Get job details for run | GET | `fetch-run-logs.sh` | Jobs array with step information |
+| `/repos/:owner/:repo/actions/runs/:run_id/logs` | Download log archive | GET | `fetch-run-logs.sh` | Binary ZIP file (302 redirect to S3) |
+
+**Usage Pattern**: All API access via `gh api` wrapper (automatic authentication, placeholder substitution, jq integration)
+
+### 3.2 GitHub Actions API Coverage
+
+#### Workflow Runs Endpoints
+
+**Used**:
+- `GET /repos/:owner/:repo/actions/runs` - List runs with filtering (status, branch, event, created date)
+- `GET /repos/:owner/:repo/actions/runs/:run_id` - Get single run details
+- `GET /repos/:owner/:repo/actions/runs/:run_id/logs` - Download log archive (302 redirect, 1-minute expiry)
+
+**Available but Unused**:
+- `POST /repos/:owner/:repo/actions/runs/:run_id/cancel` - Cancel workflow run (returns 202 Accepted)
+- `POST /repos/:owner/:repo/actions/runs/:run_id/force-cancel` - Force cancel (bypasses `always()` conditions)
+- `POST /repos/:owner/:repo/actions/runs/:run_id/rerun` - Re-run all jobs
+- `POST /repos/:owner/:repo/actions/runs/:run_id/rerun-failed-jobs` - Re-run only failed jobs
+- `DELETE /repos/:owner/:repo/actions/runs/:run_id` - Delete run from history
+- `DELETE /repos/:owner/:repo/actions/runs/:run_id/logs` - Delete log archive
+- `GET /repos/:owner/:repo/actions/runs/:run_id/attempts/:attempt_number/logs` - Get logs for specific attempt
+- `GET /repos/:owner/:repo/actions/runs/:run_id/pending_deployments` - List environments awaiting approval
+- `POST /repos/:owner/:repo/actions/runs/:run_id/pending_deployments` - Approve/reject deployment
+- `POST /repos/:owner/:repo/actions/runs/:run_id/approve` - Approve fork PR workflow
+
+**Potential Use Cases**:
+- Cancel endpoints → **GH-6/GH-7 backlog items** (cancel requested/running workflows)
+- Rerun endpoints → Automated retry logic for failed workflows
+- Delete endpoints → Cleanup in benchmark scripts
+- Pending deployments → Environment-based approval workflows (future)
+
+#### Workflow Jobs Endpoints
+
+**Used**:
+- `GET /repos/:owner/:repo/actions/runs/:run_id/jobs` - List jobs for run (paginated)
+
+**Available but Unused**:
+- `GET /repos/:owner/:repo/actions/jobs/:job_id` - Get single job details
+- `GET /repos/:owner/:repo/actions/jobs/:job_id/logs` - Download job-specific logs
+- `POST /repos/:owner/:repo/actions/jobs/:job_id/rerun` - Re-run specific job
+
+**Gap**: No step-level log access API. Must parse extracted job logs to get step-level details.
+
+#### Other Actions API Endpoints (Not Used)
+
+- **Artifacts**: List, get, download, delete workflow run artifacts
+- **Secrets**: Manage repository/organization secrets
+- **Variables**: Manage configuration variables
+- **Cache**: Manage Actions cache entries
+- **Self-hosted Runners**: Register, list, manage runners
+- **OIDC**: Manage OpenID Connect for workflow authentication
+
+### 3.3 Sprint 2 Failure Analysis: Real-time Log Streaming
+
+**Question**: Can GitHub API provide real-time/streaming access to in-progress workflow logs?
+
+**Definitive Answer**: **NO** - Real-time log streaming is impossible via GitHub API.
+
+**Evidence**:
+
+1. **REST API Log Endpoints**:
+   - `GET /repos/:owner/:repo/actions/runs/:run_id/logs` - Returns HTTP 404 if run not completed
+   - Log archive only available AFTER run reaches completed status
+   - No streaming endpoints (SSE, WebSocket, chunked transfer) documented or available
+
+2. **GitHub Web UI Behavior**:
+   - Browser interface polls for log updates (not streaming)
+   - Uses repeated XHR requests to fetch log chunks
+   - Confirms no server-side streaming mechanism exists
+
+3. **Webhook Events**:
+   - `workflow_run` event fires on status changes (queued, in_progress, completed) but **does not include log content**
+   - `workflow_job` event fires on job status changes but **does not include logs or step output**
+   - Webhooks provide status notifications only, not log data
+
+4. **GraphQL API**:
+   - No documented streaming capabilities for Actions logs
+   - GraphQL subscriptions (if available) do not apply to workflow logs
+
+**Conclusion**: Sprint 2 (GH-4) failure confirmed as **fundamental GitHub platform limitation**, not implementation deficiency.
+
+**Impact**:
+- Real-time workflow debugging impossible via API
+- Operators cannot monitor long-running workflows in real-time
+- Workaround: Sprint 3 post-run log retrieval is only viable approach
+
+**Recommendation**: Mark GH-4 as "Rejected - Platform Limitation" permanently.
+
+### 3.4 Webhook Events for Workflow Automation
+
+**`workflow_run` Event**:
+- **Triggers**: When workflow run is requested, in_progress, or completed
+- **Payload Includes**:
+  - Workflow run ID, name, status, conclusion
+  - Triggering actor, repository, head branch/SHA
+  - Created/updated timestamps
+- **Does NOT Include**: Log content, job details, step information
+- **Use Case**: Push-based notification of workflow completion (alternative to polling)
+
+**`workflow_job` Event**:
+- **Triggers**: When workflow job is queued, in_progress, or completed
+- **Payload Includes**:
+  - Job ID, name, status, conclusion
+  - Run ID (links to parent workflow run)
+  - Started/completed timestamps
+  - Step names (but not step logs)
+- **Does NOT Include**: Log content or step output
+- **Use Case**: Finer-grained progress tracking (job-level vs run-level)
+
+**Webhook vs Polling Trade-offs**:
+
+| Aspect | Polling (Current) | Webhooks (Alternative) |
+|--------|-------------------|------------------------|
+| Latency | 2-5 seconds (polling interval) | <1 second (push notification) |
+| API Load | Repeated `gh run list` calls | Zero API calls for status checks |
+| Complexity | Simple (shell script) | Requires public endpoint + receiver |
+| Security | No exposed endpoint | Webhook secret validation required |
+| Deployment | Runs anywhere | Requires publicly accessible server |
+
+**Recommendation**: Polling acceptable for current use cases. Webhooks valuable for high-frequency automation or dashboards but add operational complexity.
+
+### 3.5 GraphQL API Comparison
+
+**REST vs GraphQL for Actions**:
+
+**GraphQL Advantages**:
+- **Custom Field Selection**: Request only needed fields, reduce payload size
+- **Batch Queries**: Fetch multiple run statuses in single request
+- **Nested Relationships**: Get run + jobs + steps in one query (if schema supports)
+- **Efficiency**: Potentially fewer requests for complex data needs
+
+**Limitations**:
+- **Actions Schema Coverage**: Documentation does not detail full Actions support in GraphQL
+- **No Streaming**: GraphQL subscriptions (real-time) do not apply to workflow logs
+- **Learning Curve**: Requires GraphQL query knowledge vs simple REST paths
+
+**Current Assessment**:
+- REST API sufficient for current needs (workflow trigger, run polling, log download)
+- GraphQL could optimize batch operations (e.g., check status of 10 runs in 1 request vs 10 requests)
+- **Recommendation**: Explore GraphQL for future performance optimization, not critical for current functionality
+
+### 3.6 Rate Limiting and Best Practices
+
+**Rate Limits**:
+- **Authenticated (PAT)**: 5,000 requests/hour
+- **GitHub App**: 5,000-15,000 requests/hour (scales with org size)
+- **GITHUB_TOKEN (Actions)**: 1,000 requests/hour per repository
+- **Secondary Limits**: 900 points/minute (GET=1 point, POST/PUT/DELETE=5 points)
+
+**Our Usage Pattern Analysis**:
+- **Correlation Polling**: ~20 requests (3-second intervals for 60 seconds max) = **0.3% of hourly limit**
+- **Log Retrieval**: 3 requests (workflow ID, run details, jobs, log download) = **0.06% of hourly limit**
+- **Benchmark Scripts**: 10 runs × 23 requests = 230 requests = **4.6% of hourly limit**
+
+**Headroom**: Significant. Current usage well below rate limits.
+
+**Best Practices Applied**:
+- Limit pagination (`--limit 50`) to reduce result set size
+- Status filtering (`--status queued,in_progress`) reduces client-side processing
+- Timeout mechanisms (60s polling max) prevent infinite loops
+- Delay between benchmark iterations (5-10s) prevents burst traffic
+
+**Best Practices Not Applied (Opportunities)**:
+- **Conditional Requests**: Use `If-None-Match` / `ETag` for cached responses (not needed given low request volume)
+- **Exponential Backoff**: Fixed 3-second polling interval (could use backoff for long-running workflows)
+- **Rate Limit Headers**: Check `X-RateLimit-Remaining` header to adapt behavior (not needed given headroom)
+
+**Recommendation**: Current approach sufficient. Consider exponential backoff if extending to very long-running workflows (>5 minutes).
+
+### 3.7 Unexplored Capabilities
+
+**API Endpoints with Potential Value**:
+1. **Artifacts API** (`/repos/:owner/:repo/actions/artifacts`):
+   - Download workflow artifacts alongside logs
+   - Could enhance Sprint 3 log retrieval with artifact collection
+
+2. **Cache API** (`/repos/:owner/:repo/actions/cache`):
+   - List/delete Actions cache entries
+   - Useful for cache management automation
+
+3. **Workflow Dispatch with Typed Inputs**:
+   - REST API supports boolean/number/choice input types (not just strings)
+   - `gh workflow run` only supports `--raw-field` (strings)
+   - Direct API call enables richer input validation
+
+4. **Job Re-run** (`POST /repos/:owner/:repo/actions/jobs/:job_id/rerun`):
+   - Retry specific job without re-running entire workflow
+   - More efficient than full workflow rerun
+
+5. **Pending Deployments**:
+   - Environment-based approval workflows
+   - Programmatic approval/rejection of deployments
+
+**Features Unavailable in `gh` CLI but Accessible via API**:
+- Force cancel workflows (bypasses `always()`)
+- Delete specific logs (not entire run)
+- Workflow dispatch with typed inputs
+- Deployment approvals
+
+**Advanced Patterns**:
+- **Pagination with Cursors**: REST API uses `Link` headers for pagination
+- **Conditional Requests**: `ETag` / `If-None-Match` for caching
+- **API Previews**: Early access to experimental features via `Accept` headers
+
 ---
 
 ## Objective 4: Enumerate Major GitHub Libraries
@@ -1339,7 +1555,437 @@ For each library:
 
 Use web search and documentation reading (no installation required for design phase).
 
-### Success Criteria
+### Research Findings
+
+## 4. Major GitHub Libraries
+
+### 4.1 Library Landscape Overview
+
+The GitHub API ecosystem is mature with well-maintained libraries for all major languages. Key observations:
+
+- **Official Support**: GitHub does not provide official SDKs; community-maintained libraries dominate
+- **Maturity**: Java and Python libraries have 5K-10K+ stars, active maintenance, comprehensive feature coverage
+- **Go Leadership**: google/go-github is de-facto standard (maintained by Google, 10K+ stars)
+- **Consistency**: All major libraries follow similar patterns (client initialization, resource-based APIs, pagination)
+- **Actions Coverage**: Workflow/run management universally supported; newer APIs (cache, OIDC) have variable coverage
+
+### 4.2 Java Libraries
+
+#### hub4j/github-api
+
+**Repository**: https://github.com/hub4j/github-api
+**Maturity**: 1.1K stars, active maintenance (last release recent), Apache 2.0 license
+**Documentation**: https://github-api.kohsuke.org/
+
+**Feature Coverage**:
+- ✅ Workflow Management: Trigger workflow_dispatch, list workflows, get workflow details
+- ✅ Run Management: List runs, get run details, cancel/rerun runs
+- ✅ Log Retrieval: Download log archives (binary ZIP)
+- ✅ Artifacts: Download workflow artifacts
+- ✅ Authentication: PAT, OAuth, GitHub App tokens
+- ✅ Rate Limiting: Built-in handling with automatic retry
+- ❌ Real-time Streaming: Not available (GitHub API limitation)
+
+**Code Example** (Workflow Trigger and Correlation):
+```java
+import org.kohsuke.github.*;
+import java.util.*;
+
+// Initialize client
+GitHub github = new GitHubBuilder()
+    .withOAuthToken(System.getenv("GITHUB_TOKEN"))
+    .build();
+
+GHRepository repo = github.getRepository("owner/repo");
+GHWorkflow workflow = repo.getWorkflow("dispatch-webhook.yml");
+
+// Generate correlation ID
+String correlationId = UUID.randomUUID().toString();
+
+// Trigger workflow
+Map<String, Object> inputs = new HashMap<>();
+inputs.put("webhook_url", "https://webhook.site/test");
+inputs.put("correlation_id", correlationId);
+
+workflow.dispatch("main", inputs);
+System.out.println("Triggered with correlation ID: " + correlationId);
+
+// Poll for run (correlation mechanism)
+long startTime = System.currentTimeMillis();
+GHWorkflowRun matchedRun = null;
+
+while (System.currentTimeMillis() - startTime < 60000) { // 60s timeout
+    for (GHWorkflowRun run : repo.queryWorkflowRuns()
+            .status(GHWorkflowRun.Status.QUEUED, GHWorkflowRun.Status.IN_PROGRESS)
+            .list()) {
+        if (run.getName().contains(correlationId)) {
+            matchedRun = run;
+            break;
+        }
+    }
+    if (matchedRun != null) break;
+    Thread.sleep(3000); // 3s polling interval
+}
+
+if (matchedRun != null) {
+    System.out.println("Correlated to run ID: " + matchedRun.getId());
+} else {
+    throw new RuntimeException("Correlation timeout");
+}
+```
+
+**Assessment**:
+- **Strengths**: Mature, comprehensive API coverage, intuitive object model
+- **Weaknesses**: Synchronous blocking I/O (no async support), verbose Java syntax
+- **Use Case Fit**: Excellent for Spring Boot services, Jenkins plugins, JVM-based automation
+
+---
+
+#### OkHttp + Direct REST API
+
+**Repository**: https://square.github.io/okhttp/
+**Approach**: HTTP client + manual REST API calls
+
+**Feature Coverage**:
+- ✅ Full REST API access (no SDK abstraction limits)
+- ✅ Connection pooling, HTTP/2 support
+- ✅ Async/reactive patterns (CompletableFuture)
+- ⚠️ Manual endpoint construction, JSON parsing (Gson/Jackson)
+- ⚠️ No built-in rate limiting or retry
+
+**Code Example** (Workflow Trigger):
+```java
+import okhttp3.*;
+import com.google.gson.*;
+
+OkHttpClient client = new OkHttpClient();
+String token = System.getenv("GITHUB_TOKEN");
+
+// Trigger workflow dispatch
+String json = new Gson().toJson(Map.of(
+    "ref", "main",
+    "inputs", Map.of(
+        "webhook_url", "https://webhook.site/test",
+        "correlation_id", UUID.randomUUID().toString()
+    )
+));
+
+Request request = new Request.Builder()
+    .url("https://api.github.com/repos/owner/repo/actions/workflows/workflow.yml/dispatches")
+    .header("Authorization", "Bearer " + token)
+    .header("Accept", "application/vnd.github+json")
+    .post(RequestBody.create(json, MediaType.get("application/json")))
+    .build();
+
+try (Response response = client.newCall(request).execute()) {
+    if (response.code() == 204) {
+        System.out.println("Workflow triggered successfully");
+    }
+}
+```
+
+**Assessment**:
+- **Strengths**: Full API control, modern HTTP client, async-ready
+- **Weaknesses**: More boilerplate, manual error handling, no high-level abstractions
+- **Use Case Fit**: Microservices requiring async patterns, custom retry logic, full API flexibility
+
+---
+
+### 4.3 Go Libraries
+
+#### google/go-github
+
+**Repository**: https://github.com/google/go-github
+**Maturity**: 10.3K stars, active maintenance (Google-backed), BSD-3-Clause license
+**Documentation**: https://pkg.go.dev/github.com/google/go-github/v57/github
+
+**Feature Coverage**:
+- ✅ Workflow Management: Trigger, list, get workflow details
+- ✅ Run Management: List, get, cancel, rerun, delete runs
+- ✅ Log Retrieval: Get log download URL (handles 302 redirect)
+- ✅ Pagination: Automatic pagination handling
+- ✅ Rate Limiting: Built-in rate limit awareness
+- ✅ Context Support: Idiomatic Go context.Context for cancellation
+- ❌ Real-time Streaming: Not available (API limitation)
+
+**Code Example** (Workflow Trigger and Correlation):
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/google/go-github/v57/github"
+    "github.com/google/uuid"
+    "golang.org/x/oauth2"
+)
+
+func main() {
+    ctx := context.Background()
+    ts := oauth2.StaticTokenSource(
+        &oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+    )
+    tc := oauth2.NewClient(ctx, ts)
+    client := github.NewClient(tc)
+
+    // Generate correlation ID
+    correlationID := uuid.New().String()
+
+    // Trigger workflow
+    dispatchOpts := github.CreateWorkflowDispatchEventRequest{
+        Ref: "main",
+        Inputs: map[string]interface{}{
+            "webhook_url":    "https://webhook.site/test",
+            "correlation_id": correlationID,
+        },
+    }
+
+    _, err := client.Actions.CreateWorkflowDispatchEventByFileName(
+        ctx, "owner", "repo", "dispatch-webhook.yml", dispatchOpts)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Triggered with correlation ID: %s\n", correlationID)
+
+    // Poll for run
+    startTime := time.Now()
+    for time.Since(startTime) < 60*time.Second {
+        opts := &github.ListWorkflowRunsOptions{
+            Status: "queued,in_progress",
+            ListOptions: github.ListOptions{PerPage: 50},
+        }
+        runs, _, err := client.Actions.ListWorkflowRunsByFileName(
+            ctx, "owner", "repo", "dispatch-webhook.yml", opts)
+        if err != nil {
+            panic(err)
+        }
+
+        for _, run := range runs.WorkflowRuns {
+            if strings.Contains(*run.Name, correlationID) {
+                fmt.Printf("Correlated to run ID: %d\n", *run.ID)
+                return
+            }
+        }
+
+        time.Sleep(3 * time.Second)
+    }
+
+    panic("Correlation timeout")
+}
+```
+
+**Assessment**:
+- **Strengths**: Idiomatic Go, excellent documentation, comprehensive coverage, Google-maintained
+- **Weaknesses**: API changes between major versions (v57 current), nil pointer checks required
+- **Use Case Fit**: Go microservices, CLI tools, cloud-native automation
+
+---
+
+#### hashicorp/go-retryablehttp
+
+**Repository**: https://github.com/hashicorp/go-retryablehttp
+**Approach**: HTTP client wrapper with automatic retry logic
+**Use with**: go-github or direct REST API calls
+
+**Feature Coverage**:
+- ✅ Exponential backoff with jitter
+- ✅ Configurable retry policies (max retries, backoff strategy)
+- ✅ Context support for cancellation
+- ⚠️ Not GitHub-specific; general-purpose HTTP retry
+
+**Integration Example**:
+```go
+import (
+    "github.com/hashicorp/go-retryablehttp"
+    "github.com/google/go-github/v57/github"
+)
+
+retryClient := retryablehttp.NewClient()
+retryClient.RetryMax = 5
+retryClient.RetryWaitMin = 1 * time.Second
+retryClient.RetryWaitMax = 30 * time.Second
+
+// Use with go-github
+client := github.NewClient(retryClient.StandardClient())
+```
+
+**Assessment**:
+- **Strengths**: Production-grade retry logic, HashiCorp quality, composable
+- **Use Case Fit**: Combine with go-github for robust production automation
+
+---
+
+### 4.4 Python Libraries
+
+#### PyGithub
+
+**Repository**: https://github.com/PyGithub/PyGithub
+**Maturity**: 7K stars, active maintenance, LGPL-3.0 license
+**Documentation**: https://pygithub.readthedocs.io/
+
+**Feature Coverage**:
+- ✅ Workflow Management: Trigger, list, get workflows
+- ✅ Run Management: List, get, cancel, rerun runs
+- ✅ Log Retrieval: Get log download URL
+- ✅ Pagination: Automatic handling via PaginatedList
+- ✅ Rate Limiting: Built-in rate limit handling with retry
+- ✅ Type Hints: Modern Python 3 type annotations
+- ❌ Real-time Streaming: Not available (API limitation)
+
+**Code Example** (Workflow Trigger and Correlation):
+```python
+from github import Github
+import uuid
+import time
+
+# Initialize client
+g = Github(os.environ['GITHUB_TOKEN'])
+repo = g.get_repo("owner/repo")
+workflow = repo.get_workflow("dispatch-webhook.yml")
+
+# Generate correlation ID
+correlation_id = str(uuid.uuid4())
+
+# Trigger workflow
+workflow.create_dispatch(
+    ref="main",
+    inputs={
+        "webhook_url": "https://webhook.site/test",
+        "correlation_id": correlation_id
+    }
+)
+print(f"Triggered with correlation ID: {correlation_id}")
+
+# Poll for run
+start_time = time.time()
+while time.time() - start_time < 60:  # 60s timeout
+    runs = repo.get_workflow_runs(status="queued,in_progress")
+    for run in runs:
+        if correlation_id in run.name:
+            print(f"Correlated to run ID: {run.id}")
+            break
+    else:
+        time.sleep(3)  # 3s polling interval
+        continue
+    break
+else:
+    raise TimeoutError("Correlation timeout")
+```
+
+**Assessment**:
+- **Strengths**: Pythonic API, excellent documentation, widely used
+- **Weaknesses**: Synchronous blocking I/O, no async support
+- **Use Case Fit**: Python automation scripts, Flask/Django integrations, data pipelines
+
+---
+
+#### github3.py
+
+**Repository**: https://github.com/sigmavirus24/github3.py
+**Maturity**: 1.2K stars, active maintenance, BSD-3-Clause license
+**Documentation**: https://github3py.readthedocs.io/
+
+**Feature Coverage**:
+- ✅ Similar to PyGithub (workflow trigger, runs, logs)
+- ✅ More object-oriented design
+- ✅ Better session management
+- ⚠️ Smaller community than PyGithub
+
+**Assessment**:
+- **Strengths**: Cleaner OO design, better for complex multi-repository operations
+- **Weaknesses**: Smaller ecosystem, fewer Stack Overflow answers
+- **Use Case Fit**: Alternative to PyGithub; evaluate based on API preference
+
+---
+
+### 4.5 Comparative Analysis
+
+| Feature | Shell (Ours) | Java (hub4j) | Go (go-github) | Python (PyGithub) |
+|---------|--------------|--------------|----------------|-------------------|
+| **Workflow Trigger** | ✅ (gh CLI) | ✅ (API) | ✅ (API) | ✅ (API) |
+| **Run Correlation** | ✅ (UUID + poll) | ✅ (manual poll) | ✅ (manual poll) | ✅ (manual poll) |
+| **Log Download** | ✅ (ZIP) | ✅ (ZIP) | ✅ (URL redirect) | ✅ (URL redirect) |
+| **Real-time Stream** | ❌ (API limit) | ❌ (API limit) | ❌ (API limit) | ❌ (API limit) |
+| **Async Support** | N/A (sequential) | ❌ (sync only) | ✅ (goroutines) | ❌ (sync only) |
+| **Type Safety** | ❌ (bash strings) | ✅ (Java types) | ✅ (Go types) | ~(type hints) |
+| **Error Handling** | Basic (exit codes) | Rich (exceptions) | Rich (errors) | Rich (exceptions) |
+| **Setup Complexity** | Low (bash + gh) | Medium (Maven/Gradle) | Medium (go mod) | Low (pip) |
+| **Debugging** | Easy (echo, set -x) | Medium (IDE) | Medium (IDE) | Easy (print, pdb) |
+| **Deployment** | Anywhere (bash) | JVM required | Binary (compiled) | Python required |
+| **Rate Limiting** | Manual (delays) | Built-in | Built-in | Built-in |
+| **Pagination** | Manual (jq) | Automatic | Automatic | Automatic |
+
+### 4.6 Shell vs. Library Trade-offs
+
+**When to use Shell (our approach)**:
+- ✅ Rapid prototyping and experimentation
+- ✅ CI/CD pipeline steps (already in shell context)
+- ✅ Operator-facing tools with minimal dependencies
+- ✅ Simple workflow automation (trigger, wait, fetch logs)
+- ✅ Cross-platform (bash universally available)
+- ✅ Debugging simplicity (echo statements, manual testing)
+
+**When to use Libraries (Java/Go/Python)**:
+- ✅ Production services requiring robustness
+- ✅ Complex multi-step orchestration with business logic
+- ✅ Integration with existing applications (Spring Boot, Go microservices, Django)
+- ✅ Need for type safety and compile-time checking
+- ✅ Rich error handling and recovery patterns
+- ✅ High-frequency operations requiring connection pooling
+- ✅ Team preference for strongly-typed languages
+
+### 4.7 Use Case Recommendations
+
+**For GH-6/GH-7 (Workflow Cancellation)**:
+- **Shell**: `gh run cancel <run_id>` - simple, direct, sufficient
+- **Library**: Only if part of larger application (e.g., dashboard with cancel button)
+
+**For GH-8/GH-9 (Workflow Scheduling)**:
+- **Shell + cron**: `cron` triggers `gh workflow run` - simplest approach
+- **Library**: If building scheduler service with persistent state, retry logic, monitoring
+
+**For Production Workflow Orchestration**:
+- **Go**: Best for cloud-native services, Kubernetes operators, high-concurrency
+- **Java**: Best for Spring Boot services, enterprise integrations, existing JVM ecosystem
+- **Python**: Best for data pipelines, ML workflows, Flask/Django integrations
+- **Shell**: Best for operator tools, deployment scripts, CI/CD helpers
+
+**For Our Project (Retrospective)**:
+- **Decision**: Shell-based approach was correct choice
+- **Rationale**:
+  - Simple requirements (trigger, correlate, fetch logs)
+  - Operator-facing tools (not services)
+  - Rapid iteration during development
+  - Cross-platform compatibility
+  - No need for type safety or complex error handling
+- **Future**: Consider library migration if adding complex orchestration, web UI, or service integration
+
+### 4.8 Migration Considerations
+
+If migrating from shell to library-based implementation:
+
+**Reusable Patterns**:
+1. **UUID Correlation Strategy**: Directly applicable to all libraries
+2. **Polling with Timeout**: Translate to library's idiom (while loops, context timeouts)
+3. **Metadata Storage**: JSON file pattern becomes database/cache in services
+4. **Error Classification**: Map exit codes to typed exceptions
+
+**Migration Path**:
+1. **Phase 1**: Keep shell scripts as CLI tools
+2. **Phase 2**: Build library-based service layer for programmatic access
+3. **Phase 3**: CLI tools call service API (shell becomes thin client)
+
+**Testing Strategy**:
+- Shell scripts provide baseline behavior specification
+- Library implementation must match shell output formats (JSON compatibility)
+- Benchmark scripts validate performance parity
+
+**Deployment Changes**:
+- Shell: Single binary (`gh`) + scripts → any Unix system
+- Library: Runtime dependency (JVM/Python/Go binary) + packaging (JAR/wheel/binary)
+
+---
 
 - At least 2 libraries per language (Java, Go, Python) evaluated
 - Feature coverage matrix comparing all libraries + shell approach
