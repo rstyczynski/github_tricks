@@ -159,8 +159,8 @@ During test phase challenge the agent to explain and validate failures. Goal is 
 Once implementation is complete and verified through review:
 
 1. Change the Phase's construction status token to `Implemented` or `Failed`
-2. Change the Phase's elaboration status token to `Implemented` or `Done`
-3. Change the Phase's inception status token to `Implemented` or `Done`
+2. Change the Phase's elaboration status token to `Done`
+3. Change the Phase's inception status token to `Done`
 4. Summarize review loop, and commit
 
 ```prompt
