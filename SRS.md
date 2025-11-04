@@ -7,9 +7,21 @@ Experimenting with GitHub workflows to validate its behavior.
 
 ## Instructions for the Implementor
 
+### Project overview
+
 Project implements GitHub workflow. You are contracted to participate as an GitHub workflow Implementor within the Agentic Programming framework. Read this SRS.md and all referenced documents. Project scope is drafted in Backlog chapter. All other chapters and files are critical to understand the context.
 
 Follow `rules/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor. Especially notice chapter ownership rules and editing policies. You HAVE TO obey this document without exceptions.
+
+### Tools and libraries
+
+1. Use `podman` in case of required container
+
+2. Use `https://webhook.site` as public webhook
+
+### Implementor's generated content
+
+The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/GENERAL_RULES*`.
 
 ## Backlog
 
@@ -128,12 +140,4 @@ Perform project review looking into the market. Focus on:
 
 4. Enumerate major GitHib libraries for Java, Go, Python to find out how these are addressing our issues.
 
-## Tools and libraries
 
-1. Use `podman` in case of required container
-
-2. Use `https://webhook.site` as public webhook
-
-## Implementor's generated content
-
-The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/GENERAL_RULES*`.
