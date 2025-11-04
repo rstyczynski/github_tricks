@@ -1,7 +1,7 @@
 # GitHub Workflow
 
 version: 1
-status: Proposed
+status: Progress
 
 Experimenting with GitHub workflows to validate its behavior.
 
