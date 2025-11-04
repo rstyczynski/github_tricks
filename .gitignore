@@ -1,7 +1,7 @@
 # Ignore runs directory
 runs/
 
-# Ignore test output files
-tests/*.json
-tests/*.log
+# Do not ignore test output files
+# tests/*.json
+# tests/*.log
 

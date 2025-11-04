@@ -1,0 +1,137 @@
+{
+  "benchmark": "log_retrieval",
+  "workflow": ".github/workflows/long-run-logger.yml",
+  "webhook_url": "https://webhook.site/0d14f767-9804-4cba-b5ee-5af8b8d2d46d",
+  "store_dir": "runs",
+  "runs": 15,
+  "timestamp": "2025-11-03T22:59:19Z",
+  "measurements": [
+    {
+      "iteration": 1,
+      "correlation_id": "341F0914-72C9-4C4E-9FEE-86FCB3575368",
+      "run_id": "19051962045",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T22:59:38Z"
+    },
+    {
+      "iteration": 2,
+      "correlation_id": "9B1939DA-F607-4377-A8BE-AE2308551782",
+      "run_id": "19051969557",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:00:13Z"
+    },
+    {
+      "iteration": 3,
+      "correlation_id": "46EF8C1B-6A45-4CBB-9066-9300F81D6410",
+      "run_id": "19051981351",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:00:45Z"
+    },
+    {
+      "iteration": 4,
+      "correlation_id": "F54DC89F-3F62-43F9-B4BF-C85B77BD37C2",
+      "run_id": "19051993835",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:01:12Z"
+    },
+    {
+      "iteration": 5,
+      "correlation_id": "5DD16505-B544-43B1-A547-CAE4E09A5151",
+      "run_id": "19052003278",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:01:44Z"
+    },
+    {
+      "iteration": 6,
+      "correlation_id": "3E167653-979E-484D-B830-EC2976FBCF17",
+      "run_id": "19052015008",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:02:17Z"
+    },
+    {
+      "iteration": 7,
+      "correlation_id": "43A547DC-8F56-4B52-AB18-7949EC266B40",
+      "run_id": "19052028707",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:02:48Z"
+    },
+    {
+      "iteration": 8,
+      "correlation_id": "007AC57A-DD39-44E3-B5C4-7CDF6234C503",
+      "run_id": "19052040019",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:03:16Z"
+    },
+    {
+      "iteration": 9,
+      "correlation_id": "E2FFAC3E-E1B6-46BB-9AD0-32BF8B4601EF",
+      "run_id": "19052051392",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:03:48Z"
+    },
+    {
+      "iteration": 10,
+      "correlation_id": "8C0D6526-EB24-41A7-A975-5E710A1E7FD5",
+      "run_id": "19052062807",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:04:24Z"
+    },
+    {
+      "iteration": 11,
+      "correlation_id": "2650B31C-DCC9-4996-817B-6DD08A5B04F6",
+      "run_id": "19052078062",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:04:57Z"
+    },
+    {
+      "iteration": 12,
+      "correlation_id": "9F4B4A76-AD16-45FA-A052-D97363756747",
+      "run_id": "19052091224",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:05:34Z"
+    },
+    {
+      "iteration": 13,
+      "correlation_id": "7899EDA5-8103-4C9E-89C1-A7CCA0AD3B95",
+      "run_id": "19052105393",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:06:02Z"
+    },
+    {
+      "iteration": 14,
+      "correlation_id": "0F4094F8-50BC-4F72-927A-67958BBF8C13",
+      "run_id": "19052116879",
+      "elapsed_ms": 3000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:06:34Z"
+    },
+    {
+      "iteration": 15,
+      "correlation_id": "9B65EE4E-8729-486B-851E-C50B5B84D23E",
+      "run_id": "19052145140",
+      "elapsed_ms": 2000,
+      "log_size_kb": 0,
+      "timestamp": "2025-11-03T23:07:48Z"
+    }
+  ],
+  "statistics": {
+    "mean_ms": 2466,
+    "min_ms": 2000,
+    "max_ms": 3000,
+    "median_ms": 2000
+  },
+  "failed_runs": 0
+}
