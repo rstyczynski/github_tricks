@@ -3,7 +3,7 @@
 
 ## Design
 
-Design is owned by the Implementor and is stored in `sprint_<id>_design.md` file for each Sprint.
+Design is owned by the Implementor and is stored in `progress/sprint_<id>_design.md` file for each Sprint.
 
 Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES_v3.md`. Implementor NEVER touches the status, but his actions are driven by the status.
 
@@ -27,7 +27,7 @@ Design details for <Backlog Item B>
 
 ## Implementation notes
 
-Implementations notes is owned by the Implementor and is stored in `sprint_<id>_implementation.md` file for each Sprint.
+Implementations notes is owned by the Implementor and is stored in `progress/sprint_<id>_implementation.md` file for each Sprint.
 
 Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES_v3.md`. Implementor NEVER touches the status, but his actions are driven by the status.
 
@@ -51,9 +51,9 @@ Design details for <Backlog Item B>
 
 ## Feedback from the Implementor
 
-Feedback from the Implementor is owned by the Implementor and is stored in `sprint_<id>_feedback.md` and `sprint_<id>_openquestions.md` files for each Sprint.
+Feedback from the Implementor is owned by the Implementor and is stored in `progress/sprint_<id>_feedback.md` and `progress/sprint_<id>_openquestions.md` files for each Sprint.
 
-The file `sprint_<id>_feedback.md` is owned by the Implementor and contains proposed changes to the initial plan. Use subchapter following the Backlog Items's name. The Product Owner, after accepting the feedback, moves proposals to the implementation plan trough Backlog list. You can only append to this chapter. Never edit already existing paragraphs.
+The file `progress/sprint_<id>_feedback.md` is owned by the Implementor and contains proposed changes to the initial plan. Use subchapter following the Backlog Items's name. The Product Owner, after accepting the feedback, moves proposals to the implementation plan trough Backlog list. You can only append to this chapter. Never edit already existing paragraphs.
 
 Template of the file is following:
 
@@ -64,7 +64,7 @@ Template of the file is following:
 Status: None
 ```
 
-The file `sprint_<id>_openquestions.md` contains clarification requests from the Implementor. Use subchapter following the problem's name. The Product Owner, after accepting the question, answers here. You can append to this chapter. Never edit already existing paragraphs.
+The file `progress/sprint_<id>_openquestions.md` contains clarification requests from the Implementor. Use subchapter following the problem's name. The Product Owner, after accepting the question, answers here. You can append to this chapter. Never edit already existing paragraphs.
 
 Template of the file is following:
 
