@@ -38,6 +38,10 @@ Each section contains prompt templates you can use directly with your AI Agent. 
 
 Cooperation workflow is presented on the following diagram:
 
+<!-- Check if the image is correctly imported and displays as expected. 
+The relative path 'images/agentic_cooperation_v1.png' assumes this file is being viewed with access to the 'images/' directory at the same level. 
+If the image does not display, ensure the file exists at the specified location and the Markdown viewer supports local images. -->
+
 ![Agentic Cooperation Workflow](images/agentic_cooperation_v1.png)
 
 
