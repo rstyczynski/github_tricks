@@ -181,3 +181,14 @@ Status: Done
 Backlog Items:
 
 * GH-12. Use GitHub API to get workflow job phases with status.
+
+### Sprint 9
+
+Status: Done
+
+Backlog Items:
+
+* GH-12. Use GitHub API to get workflow job phases with status.
+
+Implement GH-12 using API calls with curl. Use token file from ./secrets directory
+

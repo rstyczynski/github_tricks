@@ -1,5 +1,7 @@
-# Ignore runs directory
+# Ignore directories
 runs/
+.secrets/
+.claude/
 
 # Do not ignore test output files
 # tests/*.json
