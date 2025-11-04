@@ -71,6 +71,14 @@ TODO
 
 TODO
 
+### GH-10. Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API
+
+Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API to validate if logs are supplied during run. Run long running workflow (the one from this project) and use above API to get log few times during a run. Having increasing logs is a proof that this API may be used for incremental log retrieval.
+
+### GH-999. Template
+
+TODO
+
 #### Testing
 
 1. Correlation must be tested with parallel executions proving that parallel clients will always have access to workflows triggered by them.
@@ -140,4 +148,12 @@ Perform project review looking into the market. Focus on:
 
 4. Enumerate major GitHib libraries for Java, Go, Python to find out how these are addressing our issues.
 
+### Sprint 6
 
+Status: Failed
+
+Reopen of Sprint 2 failure with hypothesis that GH-10 solves the requirement. This work is to validate usability or confirm lack of possibility to get live logs.
+
+Backlog Items:
+
+* GH-10. Use https://api.github.com/repos/owner/repo/actions/jobs/123456/logs API
