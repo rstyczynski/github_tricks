@@ -144,7 +144,7 @@ fetch_job_data() {
   local backoff=1
 
   while [[ $retry_count -lt $max_retries ]]; do
-    if gh run view "$run_id" --json status,conclusion,name,createdAt,jobs 2>/dev/null; then
+    if gh run view "$run_id" --json databaseId,status,conclusion,name,createdAt,jobs 2>/dev/null; then
       return 0
     fi
 
@@ -201,7 +201,7 @@ format_table() {
   local data="$1"
   local run_id run_name status started
 
-  run_id=$(echo "$data" | jq -r '.jobs[0].run_id // "unknown"')
+  run_id=$(echo "$data" | jq -r '.databaseId // "unknown"')
   run_name=$(echo "$data" | jq -r '.name // "unknown"')
   status=$(echo "$data" | jq -r '.status // "unknown"')
   started=$(echo "$data" | jq -r '.createdAt // "-"')
@@ -219,8 +219,8 @@ format_table() {
     .name,
     .status // "-",
     .conclusion // "-",
-    .started_at // "-",
-    .completed_at // "-"
+    .startedAt // "-",
+    .completedAt // "-"
   ] | @tsv' | while IFS=$'\t' read -r name status_val conclusion started_val completed; do
     # Truncate long job names
     if [[ ${#name} -gt 25 ]]; then
@@ -235,7 +235,7 @@ format_verbose() {
   local data="$1"
   local run_id run_name status started
 
-  run_id=$(echo "$data" | jq -r '.jobs[0].run_id // "unknown"')
+  run_id=$(echo "$data" | jq -r '.databaseId // "unknown"')
   run_name=$(echo "$data" | jq -r '.name // "unknown"')
   status=$(echo "$data" | jq -r '.status // "unknown"')
   started=$(echo "$data" | jq -r '.createdAt // "-"')
@@ -250,7 +250,7 @@ format_verbose() {
     local job_name job_status job_started
     job_name=$(echo "$job" | jq -r '.name')
     job_status=$(echo "$job" | jq -r '.status // "-"')
-    job_started=$(echo "$job" | jq -r '.started_at // "-"')
+    job_started=$(echo "$job" | jq -r '.startedAt // "-"')
 
     printf 'Job: %s\n' "$job_name"
     printf '  Status: %s\n' "$job_status"
@@ -266,8 +266,8 @@ format_verbose() {
         (.number|tostring) + ". " + .name,
         .status // "-",
         .conclusion // "-",
-        .started_at // "null",
-        .completed_at // "null"
+        .startedAt // "null",
+        .completedAt // "null"
       ] | @tsv' | while IFS=$'\t' read -r step_name step_status step_conclusion step_started step_completed; do
         local duration
         duration=$(calculate_duration "$step_started" "$step_completed")
@@ -283,26 +283,26 @@ format_json() {
   local data="$1"
 
   echo "$data" | jq '{
-    run_id: (.jobs[0].run_id // null),
+    run_id: (.databaseId // null),
     run_name: .name,
     status: .status,
     conclusion: .conclusion,
     started_at: .createdAt,
     completed_at: null,
     jobs: [.jobs[] | {
-      id: .id,
+      id: .databaseId,
       name: .name,
       status: .status,
       conclusion: .conclusion,
-      started_at: .started_at,
-      completed_at: .completed_at,
+      started_at: .startedAt,
+      completed_at: .completedAt,
       steps: [.steps[]? | {
         name: .name,
         status: .status,
         conclusion: .conclusion,
         number: .number,
-        started_at: .started_at,
-        completed_at: .completed_at
+        started_at: .startedAt,
+        completed_at: .completedAt
       }]
     }]
   }'

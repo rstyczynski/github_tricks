@@ -13,6 +13,7 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
 **Script**: `scripts/view-run-jobs.sh` (399 lines)
 
 **Features implemented**:
+
 - Multiple input methods: `--run-id`, `--correlation-id`, stdin JSON, interactive prompt
 - Four output formats: table (default), verbose, JSON, watch mode
 - Integration with Sprint 1 correlation metadata (`runs/<correlation_id>/metadata.json`)
@@ -25,6 +26,7 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
 ### Core Functionality
 
 **Input resolution** (priority order):
+
 1. `--run-id <id>` - Explicit numeric run ID
 2. `--correlation-id <uuid>` - Load from `runs/<uuid>.json` metadata
 3. stdin JSON - Extract run_id from piped JSON (e.g., from `trigger-and-track.sh`)
@@ -58,6 +60,7 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
    - Can be combined with any output format (table, verbose, JSON)
 
 **Key functions**:
+
 - `resolve_run_id()` - Handles all input methods with priority order
 - `fetch_job_data(run_id)` - Calls `gh run view --json` with retry logic
 - `format_table(data)` - Formats human-readable table with `column -t`
@@ -67,6 +70,7 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
 - `watch_loop(run_id)` - Polling loop with 3s interval and auto-exit
 
 **Error handling**:
+
 - Run not found (HTTP 404): "Error: Run ID <id> not found or network error after 3 attempts"
 - Invalid correlation ID: "Error: No metadata found for correlation ID <uuid>"
 - Missing run_id in stdin: "Error: Could not extract run_id from stdin JSON"
@@ -77,10 +81,12 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
 ### Validation Results
 
 **Static validation**:
+
 - ✅ `shellcheck scripts/view-run-jobs.sh` - Passes (only SC1091 info about sourced file, expected)
 - ✅ `actionlint` - No workflow changes, passes with zero errors
 
 **Basic functionality tests**:
+
 - ✅ `--help` flag displays comprehensive usage documentation
 - ✅ Error handling: Invalid stdin JSON produces clear error message
 - ✅ Error handling: Invalid correlation ID produces clear error with expected file path
@@ -91,6 +97,7 @@ Implemented `scripts/view-run-jobs.sh` - a script to retrieve and display workfl
 The following 7 test cases from the design document require actual GitHub workflow execution:
 
 **Test 1: Basic job status retrieval**
+
 ```bash
 result=$(scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --json-only)
 run_id=$(echo "$result" | jq -r '.run_id')
@@ -197,6 +204,42 @@ scripts/view-run-jobs.sh --correlation-id "$correlation_id" --runs-dir runs --wa
 ```bash
 scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --json-only \
   | scripts/view-run-jobs.sh --json
+```
+
+### Bug Fix: Field Name Mapping
+
+**Issue discovered**: GitHub CLI `gh run view --json` returns fields in camelCase format, not snake_case:
+- Actual: `startedAt`, `completedAt`, `databaseId`
+- Initially expected: `started_at`, `completed_at`, `id`
+
+**Resolution**:
+- Updated all field references to use camelCase (matching `gh` CLI output)
+- Changed run ID extraction from `.jobs[0].run_id` to `.databaseId` (run-level field)
+- Changed job ID from `.id` to `.databaseId`
+- Updated timestamp fields: `startedAt`/`completedAt` throughout all format functions
+- Added `databaseId` to `gh run view` fetch fields
+
+**Testing confirmed**: All output formats (table, verbose, JSON) now display correct data with proper timestamps and run IDs.
+
+**Validation results**:
+```
+# Table format - shows run ID, job status, and timestamps correctly
+Run: 19069076151 (Dispatch Webhook (A269B99F-DEC0-4BF9-8469-7B3549CE91DE))
+Status: completed
+Job   Status     Conclusion  Started               Completed
+emit  completed  success     2025-11-04T12:45:15Z  2025-11-04T12:45:50Z
+
+# Verbose format - displays all 7 steps with durations
+Step                             Status     Conclusion  Duration
+1. Set up job                    completed  success     0s
+2. Checkout repository           completed  success     1s
+3. Emit run identifier           completed  success     0s
+4. Notify webhook                completed  success     31s
+5. Summarize webhook invocation  completed  success     0s
+
+# JSON format - properly structured and filterable with jq
+scripts/view-run-jobs.sh --run-id 19069076151 --json | jq '.jobs[].name'
+"emit"
 ```
 
 ### Implementation Notes
