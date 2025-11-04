@@ -19,9 +19,9 @@ The Product Owner is responsible for:
 | Intervention           | Recognizing when agents deviate and correcting course promptly                                |
 | Documentation          | Maintaining requirements, design decisions, and implementation records                        |
 
-Success in agentic programming depends on understanding the capabilities and limitations of AI agents. They are powerful implementors but require explicit guidance, clear boundaries, and systematic oversight.
+Success in the agentic programming depends on understanding the capabilities and limitations of AI agents. They are powerful implementors but require explicit guidance, clear boundaries, and systematic oversight.
 
-### How to Use This Document
+## How to Use This Document
 
 This cheat sheet provides ready-to-use prompts and procedures for each development phase. It follows a Rational Unified Process (RUP) inspired approach adapted for AI collaboration:
 
@@ -45,11 +45,9 @@ Cooperation workflow is presented on the following diagram:
 Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
 
 ```prompt
-We are now in contracting phase. Project scope is defined in SRS.md. Already performed work is documented in 'progress' directory.
+We are now in contracting phase. Project scope is defined in `SRS.md`, and the implementation plan is at `PLAN.md`. Already performed work is documented in 'progress' directory.
 
-Before next steps, read and confirm the following:
-
-1. Follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
+Before next steps, read SRS/PLAN files and follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
 
 Enumerate required changes as instructed.
 
@@ -205,7 +203,7 @@ I see the `collections` keyword used in the code, which is forbidden according t
 When the Agent violates collaboration rules or modifies restricted content, issue a direct corrective command.
 
 ```prompt
-You updated the `Implementation Plan` status from `Designed` to `Planned`. NEVER update documents outside of `Design`, `Implementation notes`, `Proposed changes`, or `More information needed`. Even within these sections, do not modify paragraphs marked with `status`, as done in `Implementation notes`.
+You updated the `Implementation Plan` (PLAN.md) status from `Designed` to `Planned`. NEVER update documents outside of `Design`, `Implementation notes`, `Proposed changes`, or `More information needed`. Even within these sections, do not modify paragraphs marked with `status`, as done in `Implementation notes`.
 ```
 
 ### Conceptual Defect

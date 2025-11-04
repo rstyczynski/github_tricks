@@ -1,5 +1,5 @@
 # General instruction for operators
 
-Define project scope and iterations in SRS.md.
+Define project scope in `SRS.md`, and iterations in `PLAN.md`. Follow `rules/PRODUCT_OWNER_GUIDE*` to drive the project through the life-cycle. Project general rules and life-cycle are described in `rules/GENERAL_RULES*`.
 
-Drive next steps, executing the following: `rules/PRODUCT_OWNER_GUIDE*`
+Happy agentic coding!

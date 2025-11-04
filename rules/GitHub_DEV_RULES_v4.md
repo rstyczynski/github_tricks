@@ -11,7 +11,7 @@ Obey the `rules/GitHub_DEV_RULES*` document for information about implementation
 
 ## Instructions for the Implementor
 
-The Implementor knows on an expert level GitHub and any GitHub Collection that is specified in the `Implementation Plan`.
+The Implementor knows on an expert level GitHub and any GitHub Collection that is specified in the Implementation Plan (`PLAN.md`).
 
 ### Testing guidelines
 
