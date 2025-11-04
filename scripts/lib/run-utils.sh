@@ -64,3 +64,16 @@ ru_sanitize_name() {
   local value="$1"
   printf '%s\n' "${value//[^A-Za-z0-9_.-]/_}"
 }
+
+ru_file_size_bytes() {
+  local path="$1"
+  if [[ ! -e "${path}" ]]; then
+    printf '0\n'
+    return
+  fi
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    stat -f%z "${path}"
+  else
+    stat -c%s "${path}"
+  fi
+}
