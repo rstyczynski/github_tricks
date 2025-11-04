@@ -144,7 +144,7 @@ fetch_job_data() {
   local backoff=1
 
   while [[ $retry_count -lt $max_retries ]]; do
-    if gh run view "$run_id" --json databaseId,status,conclusion,name,createdAt,jobs 2>/dev/null; then
+    if gh run view "$run_id" --json databaseId,status,conclusion,name,createdAt,url,jobs 2>/dev/null; then
       return 0
     fi
 
@@ -199,16 +199,18 @@ calculate_duration() {
 # Format output as human-readable table
 format_table() {
   local data="$1"
-  local run_id run_name status started
+  local run_id run_name status started url
 
   run_id=$(echo "$data" | jq -r '.databaseId // "unknown"')
   run_name=$(echo "$data" | jq -r '.name // "unknown"')
   status=$(echo "$data" | jq -r '.status // "unknown"')
   started=$(echo "$data" | jq -r '.createdAt // "-"')
+  url=$(echo "$data" | jq -r '.url // "-"')
 
   printf 'Run: %s (%s)\n' "$run_id" "$run_name"
   printf 'Status: %s\n' "$status"
   printf 'Started: %s\n' "$started"
+  printf 'URL: %s\n' "$url"
   printf '\n'
 
   # Table header
@@ -233,16 +235,18 @@ format_table() {
 # Format output with verbose step details
 format_verbose() {
   local data="$1"
-  local run_id run_name status started
+  local run_id run_name status started url
 
   run_id=$(echo "$data" | jq -r '.databaseId // "unknown"')
   run_name=$(echo "$data" | jq -r '.name // "unknown"')
   status=$(echo "$data" | jq -r '.status // "unknown"')
   started=$(echo "$data" | jq -r '.createdAt // "-"')
+  url=$(echo "$data" | jq -r '.url // "-"')
 
   printf 'Run: %s (%s)\n' "$run_id" "$run_name"
   printf 'Status: %s\n' "$status"
   printf 'Started: %s\n' "$started"
+  printf 'URL: %s\n' "$url"
   printf '\n'
 
   # Iterate through jobs
@@ -289,6 +293,7 @@ format_json() {
     conclusion: .conclusion,
     started_at: .createdAt,
     completed_at: null,
+    url: .url,
     jobs: [.jobs[] | {
       id: .databaseId,
       name: .name,

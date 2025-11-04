@@ -154,6 +154,7 @@ Expected: Seamless composition via JSON stdin/stdout
 ### Integration with Previous Sprints
 
 **Sprint 1 compatibility**:
+
 - ✅ Sources `scripts/lib/run-utils.sh` shared functions
 - ✅ Uses `ru_read_run_id_from_runs_dir()` to load from correlation metadata
 - ✅ Uses `ru_read_run_id_from_stdin()` to accept JSON from `trigger-and-track.sh`
@@ -161,12 +162,14 @@ Expected: Seamless composition via JSON stdin/stdout
 - ✅ Accepts `--runs-dir` and `--correlation-id` CLI patterns (consistent with Sprint 1)
 
 **Sprint 3 compatibility**:
+
 - ✅ Uses same error handling patterns (clear messages, non-zero exit codes)
 - ✅ Uses same retry logic patterns (exponential backoff)
 - ✅ Follows same script structure (parse args, validate, execute, format output)
 - ✅ Complements log retrieval workflow (view jobs before/after fetching logs)
 
 **Sprint 5 recommendations**:
+
 - ✅ Uses `gh run view --json jobs` (documented in Sprint 5 CLI analysis)
 - ✅ Follows shell-based approach validated as appropriate for project scope
 - ✅ Uses GitHub CLI with browser-based authentication (Sprint 0 prerequisites)
@@ -174,26 +177,31 @@ Expected: Seamless composition via JSON stdin/stdout
 ### Usage Examples
 
 **Example 1: View job status for specific run**
+
 ```bash
 scripts/view-run-jobs.sh --run-id 1234567890
 ```
 
 **Example 2: View verbose output with steps**
+
 ```bash
 scripts/view-run-jobs.sh --run-id 1234567890 --verbose
 ```
 
 **Example 3: Get JSON output for programmatic processing**
+
 ```bash
 scripts/view-run-jobs.sh --run-id 1234567890 --json | jq '.jobs[] | select(.conclusion == "failure")'
 ```
 
 **Example 4: Monitor workflow in real-time**
+
 ```bash
 scripts/view-run-jobs.sh --run-id 1234567890 --watch
 ```
 
 **Example 5: Integration with trigger-and-track (correlation-based)**
+
 ```bash
 result=$(scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --json-only)
 correlation_id=$(echo "$result" | jq -r '.correlation_id')
@@ -201,6 +209,7 @@ scripts/view-run-jobs.sh --correlation-id "$correlation_id" --runs-dir runs --wa
 ```
 
 **Example 6: Pipeline integration (stdin)**
+
 ```bash
 scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --json-only \
   | scripts/view-run-jobs.sh --json
@@ -209,10 +218,12 @@ scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --jso
 ### Bug Fix: Field Name Mapping
 
 **Issue discovered**: GitHub CLI `gh run view --json` returns fields in camelCase format, not snake_case:
+
 - Actual: `startedAt`, `completedAt`, `databaseId`
 - Initially expected: `started_at`, `completed_at`, `id`
 
 **Resolution**:
+
 - Updated all field references to use camelCase (matching `gh` CLI output)
 - Changed run ID extraction from `.jobs[0].run_id` to `.databaseId` (run-level field)
 - Changed job ID from `.id` to `.databaseId`
@@ -222,6 +233,7 @@ scripts/trigger-and-track.sh --webhook-url "$WEBHOOK_URL" --store-dir runs --jso
 **Testing confirmed**: All output formats (table, verbose, JSON) now display correct data with proper timestamps and run IDs.
 
 **Validation results**:
+
 ```
 # Table format - shows run ID, job status, and timestamps correctly
 Run: 19069076151 (Dispatch Webhook (A269B99F-DEC0-4BF9-8469-7B3549CE91DE))
@@ -242,9 +254,47 @@ scripts/view-run-jobs.sh --run-id 19069076151 --json | jq '.jobs[].name'
 "emit"
 ```
 
+### Enhancement: GitHub URL Display
+
+**Change requested**: Add GitHub URL to all output formats for browser access to real-time status, logs, etc.
+
+**Implementation**:
+- Added `url` field to `gh run view` fetch fields
+- Display URL in table format header (after "Started" line)
+- Display URL in verbose format header (after "Started" line)
+- Include `url` field in JSON output for programmatic access
+
+**URL format**: `https://github.com/{owner}/{repo}/actions/runs/{run_id}`
+
+**Usage**:
+```bash
+# Table format shows clickable URL
+scripts/view-run-jobs.sh --run-id 19069076151
+Run: 19069076151 (Dispatch Webhook (...))
+Status: completed
+Started: 2025-11-04T12:45:06Z
+URL: https://github.com/rstyczynski/github_tricks/actions/runs/19069076151
+
+# JSON format includes URL field
+scripts/view-run-jobs.sh --run-id 19069076151 --json | jq '{run_id, status, url}'
+{
+  "run_id": 19069076151,
+  "status": "completed",
+  "url": "https://github.com/rstyczynski/github_tricks/actions/runs/19069076151"
+}
+```
+
+**Benefit**: Users can quickly navigate to GitHub Actions UI for:
+- Real-time log streaming (while job runs)
+- Re-run workflows
+- View artifacts
+- Check detailed job annotations
+- Access workflow YAML file
+
 ### Implementation Notes
 
 **Date handling for duration calculation**:
+
 - Detects platform (GNU date vs BSD date) using `date --version`
 - GNU date (Linux): `date -d "$timestamp" +%s`
 - BSD date (macOS): `date -j -f "%Y-%m-%dT%H:%M:%SZ" "$timestamp" +%s`
@@ -252,12 +302,14 @@ scripts/view-run-jobs.sh --run-id 19069076151 --json | jq '.jobs[].name'
 - Truncates microseconds from ISO8601 timestamps for BSD date compatibility
 
 **Column formatting**:
+
 - Uses tab-separated values (TSV) intermediate format
 - Pipes to `column -t` for automatic column width adjustment
 - Handles terminal width constraints gracefully
 - Truncates long job names (>25 chars) to prevent table wrapping
 
 **Watch mode behavior**:
+
 - Polls every 3 seconds (well within GitHub API rate limits)
 - Uses `clear` command if stdout is a terminal
 - Exits immediately when `status == "completed"`
@@ -265,6 +317,7 @@ scripts/view-run-jobs.sh --run-id 19069076151 --json | jq '.jobs[].name'
 - No unnecessary polling after completion
 
 **Retry logic**:
+
 - Max 3 attempts for `gh run view` calls
 - Exponential backoff: 1s, 2s, 4s between retries
 - Handles transient network errors
