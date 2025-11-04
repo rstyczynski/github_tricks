@@ -36,6 +36,11 @@ Each phase handles exceptions, when Product Owner handles deviations and maintai
 
 Each section contains prompt templates you can use directly with your AI Agent. Think of this as your operational playbook for managing AI-driven development projects.
 
+Cooperation workflow is presented on the following diagram:
+
+![Agentic Cooperation Workflow](images/agentic_cooperation_v1.png)
+
+
 ## Contracting
 
 Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
