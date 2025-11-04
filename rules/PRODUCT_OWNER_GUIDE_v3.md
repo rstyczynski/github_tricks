@@ -143,13 +143,19 @@ Once confirmed:
 Proceed with implementation for accepted sprints. Run test for each software product to confirm proper execution before passing to the Product Owner.
 ```
 
-Here is a implementation review loop. Verify all the agent did by executing implemented tests. Request new tests to cover all cases.
+Here is an implementation review loop. Verify all the agent did by executing implemented tests. Request new tests to cover all cases. To automate tests ask the agent to loop by themselves.
+
+```prompt
+Run test loops for me. Report to me success or failure once you test loos are finished.
+```
+
+During test phase challenge the agent to explain and validate failures. Goal is to eliminate al bugs from the developed product.
 
 Once implementation is complete and verified through review:
 
-1. Change the Phase's construction status token to `Implemented`.
-2. Change the Phase's elaboration status token to `Implemented`.
-3. Change the Phase's inception status token to `Implemented`.
+1. Change the Phase's construction status token to `Implemented` or `Failed`
+2. Change the Phase's elaboration status token to `Implemented` or `Done`
+3. Change the Phase's inception status token to `Implemented` or `Done`
 4. Summarize review loop, and commit
 
 ```prompt
