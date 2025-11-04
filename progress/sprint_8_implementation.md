@@ -2,7 +2,7 @@
 
 ## GH-12. Use GitHub API to get workflow job phases with status
 
-Status: Progress
+Status: Done
 
 ### Implementation Summary
 

@@ -2,7 +2,7 @@
 
 ## GH-12. Use GitHub API to get workflow job phases with status
 
-Status: Proposed
+Status: Done
 
 Description: Use GitHub API to get workflow job phases with status mimicking `gh run view <run_id>`. Use API or gh utility. Prefer browser-based authentication for simplicity.
 

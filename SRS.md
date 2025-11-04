@@ -83,8 +83,6 @@ Validate working model of a webhook informing about run_id for a dispatched work
 
 Use GitHub API to get workflow job phases with status mimicking `gh run view <run_id>`. Use API or gh utility. Prefer browser based authentication for simplicity. 
 
-TODO
-
 ### GH-999. Template
 
 TODO
@@ -176,9 +174,9 @@ Backlog Items:
 
 * GH-11. Workflow Webhook as a tool to get run_id
 
-### Sprint 7
+### Sprint 8
 
-Status: Progress
+Status: Done
 
 Backlog Items:
 
