@@ -91,7 +91,7 @@ Once the plan is satisfactory:
 1. Summarize review loop, and commit
 
 ```prompt
-Confirm your understanding, and summarize this conversation in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
+Confirm your understanding, and summarize this conversation in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
 ```
 
 ## Elaboration
@@ -117,7 +117,7 @@ Once the design is ok:
 3. Summarize review loop, and commit
 
 ```prompt
-Confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention. Do not change any other documents!
+Confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
 ```
 
 ## Construction
@@ -164,7 +164,7 @@ Once implementation is complete and verified through review:
 4. Summarize review loop, and commit
 
 ```prompt
-Confirm completion of the implementation, and summarize the discussion in `progress/construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions. Do not change any other files!
+Confirm completion of the implementation, and summarize the discussion in `progress/construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions. Do not change any other documents / file in the local file system!
 ```
 
 ## Interventions

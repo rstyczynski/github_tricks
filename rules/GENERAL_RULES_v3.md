@@ -203,4 +203,4 @@ Answer: None
 
 ## Appendix B. Git rules
 
-Refer to GIT_RULES_v1.md for git repository rules.
+Refer to `rules/GIT_RULES*` document for git repository rules.
