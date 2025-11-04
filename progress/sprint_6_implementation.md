@@ -11,7 +11,7 @@ Status: Progress
   - `--run-id` / `--correlation-id` reuse existing runs; otherwise the tool triggers a fresh execution (webhook defaults to `https://example.invalid/probe` if omitted).
   - `--json` emits a machine-readable summary with metrics (first sample containing logs, first content change, final job status) for automated analysis.
 - Each sample records whether new content appeared by hashing extracted log payloads via Python; the human-readable mode prints a compact table and points to the stored artifacts for manual inspection.
-- Added defensive polling: if the run reaches `completed` yet the jobs API still returns no entries or surfaces an error message, the script exits gracefully and reports the condition instead of waiting indefinitely.
+- Added defensive polling: if the run reaches `completed` yet the jobs API still returns no entries or surfaces an error message, the script exits gracefully and reports the condition instead of waiting indefinitely. Removed `--silent` from the jobs API poll so results are actually captured.
 
 ## Testing
 

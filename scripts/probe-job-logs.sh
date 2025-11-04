@@ -245,7 +245,7 @@ PY
 }
 
 while (( sample_index <= max_samples )); do
-  jobs_payload_raw="$(gh api "repos/${repo}/actions/runs/${run_id}/jobs?per_page=20" --method GET --silent --paginate 2>/dev/null || true)"
+  jobs_payload_raw="$(gh api "repos/${repo}/actions/runs/${run_id}/jobs?per_page=20" --method GET --paginate 2>/dev/null || true)"
   if [[ -z "${jobs_payload_raw}" ]]; then
     jobs_payload='[]'
   else
