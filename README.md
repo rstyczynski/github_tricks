@@ -4,10 +4,15 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 
 ## Features
 
-- **Trigger & Track**: Dispatch workflows and correlate run IDs
-- **Log Retrieval**: Stream logs in real-time or fetch after completion
-- **Job Monitoring**: View workflow job phases and status
+- **Trigger & Track**: Dispatch workflows and correlate run IDs (UUID-based, 2-5s latency)
+- **Post-Run Log Retrieval**: Fetch and aggregate workflow logs after completion
+- **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
 - **Benchmarking**: Measure timing for correlation and log retrieval
+
+### Known Limitations (GitHub API)
+
+- **No real-time log streaming**: Logs only available after job completion (Sprint 2, 6 - FAILED)
+- **Webhooks require public endpoints**: Local webhook-based correlation not feasible (Sprint 7 - FAILED)
 
 ## Quick Start
 
@@ -23,17 +28,24 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 # View job status
 ./scripts/view-run-jobs.sh --run-id <run_id>
 
-# Stream logs in real-time
-./scripts/stream-run-logs.sh <run_id>
+# Fetch logs after completion
+./scripts/fetch-run-logs.sh --run-id <run_id>
 ```
 
 ## Key Scripts
 
-- `trigger-and-track.sh` - Trigger workflow and retrieve run ID
-- `view-run-jobs.sh` - Display job phases and status
-- `stream-run-logs.sh` - Stream workflow logs during execution
+**Working Tools:**
+- `trigger-and-track.sh` - Trigger workflow and retrieve run ID via UUID correlation
+- `fetch-run-logs.sh` - Download and aggregate logs after run completion
+- `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
+- `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
 - `benchmark-correlation.sh` - Measure run ID retrieval timing
 - `benchmark-log-retrieval.sh` - Measure log retrieval timing
+
+**Diagnostic/Failed Feature Scripts:**
+- `stream-run-logs.sh` - Stub demonstrating real-time streaming is not supported
+- `probe-job-logs.sh` - Proves job logs API only works after completion
+- `manage-actions-webhook.sh` - Webhook management (requires public endpoint)
 
 ## Requirements
 
