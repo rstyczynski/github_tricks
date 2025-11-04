@@ -9,7 +9,7 @@ Experimenting with GitHub workflows to validate its behavior.
 
 Project implements GitHub workflow. You are contracted to participate as an GitHub workflow Implementor within the Agentic Programming framework. Read this SRS.md and all referenced documents. Project scope is drafted in Backlog chapter. All other chapters and files are critical to understand the context.
 
-Follow `rules/GitHub_DEV_RULES_v3.md` document for information about implementation process and the contract between the Product Owner and the Implementor. Especially notice chapter ownership rules and editing policies. You HAVE TO obey this document without exceptions.
+Follow `rules/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor. Especially notice chapter ownership rules and editing policies. You HAVE TO obey this document without exceptions.
 
 ## Backlog
 
@@ -68,7 +68,7 @@ More specific testing may be specified for each `Backlog Item` and `Sprint`.
 
 ## Implementation Plan
 
-This chapter is owned by the Product Owner. The Implementor NEVER changes this chapter. Product owner owns `Status` line under phase chapter inserting here design state according to implementation's state machine defined in  `rules/GitHub_DEV_RULES_v3.md`. Implementor NEVER touches the status, but his actions are driven by the status.
+This chapter is owned by the Product Owner. The Implementor NEVER changes this chapter. Product owner owns `Status` line under phase chapter inserting here design state according to implementation's state machine defined in  `rules/GitHub_DEV_RULES*`. Implementor NEVER touches the status, but his actions are driven by the status.
 
 ### Sprint 0 - Prerequisites
 
@@ -114,6 +114,20 @@ Backlog Items:
 * GH-3.1. Test timings of run_id retrieval
 * GH-5.1. Test timings of execution logs retrieval
 
+### Sprint 5
+
+Status: Implemented
+
+Perform project review looking into the market. Focus on:
+
+1. Enumerate project achievements and failures.
+
+2. Enumerate `gh` CLI capabilities listing what was used what is potentially available for next step verifications.
+
+3. Enumerate GitHub API validating if we can achieve requirements.
+
+4. Enumerate major GitHib libraries for Java, Go, Python to find out how these are addressing our issues.
+
 ## Tools and libraries
 
 1. Use `podman` in case of required container
@@ -122,4 +136,4 @@ Backlog Items:
 
 ## Implementor's generated content
 
-The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/GENERAL_RULES_v1.md`.
+The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/GENERAL_RULES*`.

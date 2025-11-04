@@ -5,7 +5,7 @@
 
 Design is owned by the Implementor and is stored in `progress/sprint_<id>_design.md` file for each Sprint.
 
-Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES_v3.md`. Implementor NEVER touches the status, but his actions are driven by the status.
+Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES*`. Implementor NEVER touches the status, but his actions are driven by the status.
 
 General template for the file:
 
@@ -29,7 +29,7 @@ Design details for <Backlog Item B>
 
 Implementations notes is owned by the Implementor and is stored in `progress/sprint_<id>_implementation.md` file for each Sprint.
 
-Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES_v3.md`. Implementor NEVER touches the status, but his actions are driven by the status.
+Product Owner exceptionally may insert slight changes. Product owner owns `Status` line under phase chapter inserting here design state according to design's state machine defined in `rules/GitHub_DEV_RULES*`. Implementor NEVER touches the status, but his actions are driven by the status.
 
 General template for the file:
 
@@ -77,6 +77,26 @@ Problem to clarify: None
 Answer: None
 ```
 
-## Appendix A. Git rules
+## Appendix A. Document rules
+
+### Editing
+
+1. Use Markdown
+
+2. Do not use any indention under chapters. Each paragraph starts always at column zero. Exception are enumerations.
+
+3. Always add an empty line before any code blocks, enumerations. Follow Markdown linting rules.
+
+4. Always add an empty line after chapters, list headers. Follow Markdown linting rules.
+
+### Content ownership
+
+1. Any change in already closed parts or the implementation plan go through `Proposed changes` and `More information needed` process / chapters.
+
+2. Never edit anything but `Design` chapter describing `Implementation Sprint`. Never edit other Sprints' design chapters.
+
+3. Design chapters are always on 3rd level under Design chapter.
+
+## Appendix B. Git rules
 
 Refer to GIT_RULES_v1.md for git repository rules.

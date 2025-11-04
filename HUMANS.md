@@ -2,4 +2,4 @@
 
 Define project scope and iterations in SRS.md.
 
-Drive next steps, executing the following: `rules/PRODUCT_OWNER_GUIDE_v3.md`
+Drive next steps, executing the following: `rules/PRODUCT_OWNER_GUIDE*`

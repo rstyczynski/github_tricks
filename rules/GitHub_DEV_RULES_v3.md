@@ -6,7 +6,7 @@ status: review
 This document defines development rules that are a contract between the Product Owner and the Implementor with the goal to be used in agentic coding. Always confirm with the agent clarity of the rules expressed here with the following prompt:
 
 ```prompt
-Obey the `rules/GitHub_DEV_RULES_v3.md` document for information about implementation process and the contract between the Product Owner and the Implementor, especially for agentic agent acting as GitHub Implementor. You HAVE TO obey this document without exceptions. Confirm or enumerate points not clear or wrong form your perspective.
+Obey the `rules/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor, especially for agentic agent acting as GitHub Implementor. You HAVE TO obey this document without exceptions. Confirm or enumerate points not clear or wrong form your perspective.
 ```
 
 ## General rules
@@ -136,26 +136,6 @@ stateDiagram-v2
 5. User documentation in place
 
 6. Simple example in place
-
-## Document rules
-
-### Editing
-
-1. Use Markdown
-
-2. Do not use any indention under chapters. Each paragraph starts always at column zero. Exception are enumerations.
-
-3. Always add an empty line before any code blocks, enumerations. Follow Markdown linting rules.
-
-4. Always add an empty line after chapters, list headers. Follow Markdown linting rules.
-
-### Content ownership
-
-1. Any change in already closed parts or the implementation plan go through `Proposed changes` and `More information needed` process / chapters.
-
-2. Never edit anything but `Design` chapter describing `Implementation Sprint`. Never edit other Sprints' design chapters.
-
-3. Design chapters are always on 3rd level under Design chapter.
 
 ## Tools and libraries
 

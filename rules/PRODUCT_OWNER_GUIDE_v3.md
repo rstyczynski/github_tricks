@@ -68,7 +68,7 @@ Summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is th
 
 The Product Owner leads the design and implementation process. The Agent is treated as a real Implementor, collaborating through inception, design, implementation, testing, and documentation phases. Refer to files in `rules` directory for detailed rules shaping the project.
 
-Once the SRS document is ready, the Product Owner commands agent to read the document. This is a starting point of any subsequent sprints to be executed after execution break, having other sprint ready.
+Once the SRS document is ready, the Product Owner commands agent to read the document. This is a **starting point** of any subsequent sprints to be executed after execution break, having other sprint ready.
 
 ```prompt
 We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables.
@@ -132,7 +132,7 @@ Enumerate required changes as instructed.
 
 Ask questions in case of clarifications needed as instructed.
 
-Summarize what have to be done.
+Summarize what have to be done following Sprint's design document.
 
 Confirm when all is clear and you are ready to proceed.
 ```
@@ -162,6 +162,7 @@ Agent cooperation is not flawless. The Agent may over-engineer, ignore certain a
 
 | Category                | Typical Cause                     | Remedy                     |
 |-------------------------|---------------------------------|----------------------------|
+| Session Limit Reached   | Context/token limit exceeded      | Continue with new Agent    |
 | Technical Noncompliance  | Code deviates from best practices | Enforce BP compliance      |
 | Procedural Violation    | Rules ignored or modified         | Restate limits, correct    |
 | Conceptual Defect       | Wrong technical assumptions       | Update design              |
@@ -172,12 +173,20 @@ When problems appear, inform the Agent directly. Communication should resemble t
 
 Interventions are not failures but control points that maintain alignment between human intent and AI execution. Each correction strengthens mutual understanding and improves the next collaboration cycle.
 
+### Session limit reached
+
+You can flawlessly switch between Agents when session limit is reached.
+
+```prompt
+Look into the project. I'm in Sprint implementation review. I'd like you to continue work on this Sprint. Look at documents and summarize your readiness to continue Sprint.
+```
+
 ### Technical Noncompliance
 
 When the Product Owner detects deviations from Ansible Best Practices in the Agent’s output.
 
 ```prompt
-I see the `collections` keyword used in the code, which is forbidden according to `rules/ANSIBLE_BP_v2.md`. Review all code and documentation for any violations of `rules/ANSIBLE_BP_v2.md` and correct them.
+I see the `collections` keyword used in the code, which is forbidden according to `rules/ANSIBLE_BP*`. Review all code and documentation for any violations of `rules/ANSIBLE_BP*` and correct them.
 ```
 
 ### Procedural Violation
@@ -209,4 +218,3 @@ Add it to the implementation.
 It may happen that after several rounds of corrections, the agent still misbehaves, drifting from the Product Owner's vision. This indicates that rules or requirements are wrongly specified. In the former case, amend the rules to make them more specific; try to add contradicting examples.
 
 In case of functional implementation issues, verify if the requirement is clear enough and if it does not mismatch agent capabilities. Return to the Design phase to review the chosen approach. In the worst case mark requirement as `Postponed` or even `Rejected`. Commit the conversation keeping commit rules, and keep the misbehaving branch for your records.
-
