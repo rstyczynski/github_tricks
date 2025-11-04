@@ -68,6 +68,8 @@ stateDiagram-v2
     Implemented --> Tested
     Tested --> Done
     
+    Progress --> Failed
+    Designed --> Failed
     Implemented --> Failed
 
     Planned --> Rejected
