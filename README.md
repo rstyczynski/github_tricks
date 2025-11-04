@@ -59,6 +59,21 @@ To trigger an AI agent to implement features:
 
 **For Operators**: See `HUMANS.md` and `rules/PRODUCT_OWNER_GUIDE*` for managing the project through iterations.
 
+## AI-Driven Development Process
+
+This project uses agentic programming where AI agents collaborate with a Product Owner through structured phases with built-in feedback loops:
+
+![Agentic Cooperation Workflow](rules/images/agentic_cooperation_v1.png)
+
+**Development Phases:**
+
+- **Contracting** (Gray): Establish collaboration rules and agent cooperation specification
+- **Inception** (Green): Define requirements in Software Requirements Specification (SRS)
+- **Elaboration** (Yellow): Create and review design with iterative refinement
+- **Construction** (Blue): Implement, test, and refine code with continuous feedback
+
+Each phase includes review loops ensuring quality and alignment. See [Product Owner Guide](rules/PRODUCT_OWNER_GUIDE_v3.md) for detailed process documentation.
+
 ## Documentation
 
 See `SRS.md` for full specification and `rules/` for development guidelines.
