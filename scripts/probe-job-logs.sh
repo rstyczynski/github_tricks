@@ -254,9 +254,23 @@ while (( sample_index <= max_samples )); do
   if [[ -z "${jobs_payload}" || "${jobs_payload}" == "null" ]]; then
     jobs_payload='[]'
   fi
+
+  if jq -e '.message? // empty' <<<"${jobs_payload_raw}" >/dev/null 2>&1; then
+    error_message="$(jq -r '.message' <<<"${jobs_payload_raw}")"
+    log "GitHub API responded with error: ${error_message}"
+    break
+  fi
+
   job_count=$(jq 'length' <<<"${jobs_payload}")
 
   if (( job_count == 0 )); then
+    run_state="$(gh run view "${run_id}" --json status,conclusion --jq '{status, conclusion}' 2>/dev/null || echo '{}')"
+    run_status="$(jq -r '.status // empty' <<<"${run_state}")"
+    run_conclusion="$(jq -r '.conclusion // empty' <<<"${run_state}")"
+    if [[ "${run_status}" == "completed" ]]; then
+      log "Run ${run_id} is completed (conclusion: ${run_conclusion:-unknown}) but no jobs were returned by the API."
+      break
+    fi
     log "No jobs reported yet, waiting..."
     sleep "${interval}"
     continue
