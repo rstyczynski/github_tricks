@@ -75,7 +75,7 @@ To trigger an AI agent to implement features:
 
 This project uses agentic programming where AI agents collaborate with a Product Owner through structured phases with built-in feedback loops:
 
-![Agentic Cooperation Workflow](rules/images/agentic_cooperation_v1.png)
+![Agentic Cooperation Workflow](rules/images/agentic_cooperation_v2.png)
 
 **Development Phases:**
 

@@ -38,7 +38,7 @@ Each section contains prompt templates you can use directly with your AI Agent. 
 
 Cooperation workflow is presented on the following diagram:
 
-![Agentic Cooperation Workflow](images/agentic_cooperation_v1.png)
+![Agentic Cooperation Workflow](images/agentic_cooperation_v2.png)
 
 ## Contracting
 

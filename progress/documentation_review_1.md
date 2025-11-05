@@ -22,7 +22,7 @@ The documentation improvements were driven by the need for transparency, accurac
 
 **Commit 552a774 (2025-11-04): AI-driven process documentation**
 - Added 15-line section on "AI-Driven Development Process"
-- Included visual workflow diagram reference (agentic_cooperation_v1.png)
+- Included visual workflow diagram reference (agentic_cooperation_v2.png)
 - Documented four development phases: Contracting, Inception, Elaboration, Construction
 - Explained feedback loops and quality assurance approach
 - Referenced Product Owner Guide for detailed process documentation
