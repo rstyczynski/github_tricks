@@ -4,7 +4,7 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 
 ## Features
 
-- **Trigger & Track**: Dispatch workflows and correlate run IDs (UUID-based, 2-5s latency)
+- **Trigger & Track**: Dispatch workflows and correlate run IDs (UUID-based, median 17s, see `tests/correlation-timings.json`)
 - **Post-Run Log Retrieval**: Fetch and aggregate workflow logs after completion
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
 - **Benchmarking**: Measure timing for correlation and log retrieval
