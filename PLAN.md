@@ -1,6 +1,6 @@
 # Implementation Plan
 
-The plan organizes execution of Backlog Items specified in `SRS.md` document in a form of iterations - Sprints after Scrum method. This document is owned by the Product Owner. The Implementor NEVER changes this document. The Product Owner owns the `Status` line under each phase chapter, inserting the design state according to the implementation state machine defined in `rules/GitHub_DEV_RULES*`. Implementors NEVER touch the status, but their actions are driven by it.
+The plan organizes execution of Backlog Items specified in `BACKLOG.md` document in a form of iterations - Sprints after Scrum method. This document is owned by the Product Owner. The Implementor NEVER changes this document. The Product Owner owns the `Status` line under each phase chapter, inserting the design state according to the implementation state machine defined in `rules/GitHub_DEV_RULES*`. Implementors NEVER touch the status, but their actions are driven by it.
 
 ## Sprint 0 - Prerequisites
 

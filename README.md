@@ -57,7 +57,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 
 ### Adding New Features
 
-1. Add feature request to `SRS.md` Backlog section (following GH-N numbering)
+1. Add feature request to `BACKLOG.md` (following GH-N numbering)
 2. Define scope, requirements, and acceptance criteria
 3. Update `PLAN.md` to schedule for iteration
 
@@ -66,7 +66,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 To trigger an AI agent to implement features:
 
 1. Provide agent with `AGENTS.md` instructions
-2. Agent reads `SRS.md` (scope), `PLAN.md` (iterations), and `rules/` (process)
+2. Agent reads `BACKLOG.md` (scope), `PLAN.md` (iterations), and `rules/` (process)
 3. Agent follows the full development lifecycle per `rules/GENERAL_RULES*`
 
 **For Operators**: See `HUMANS.md` and `rules/PRODUCT_OWNER_GUIDE*` for managing the project through iterations.
@@ -80,7 +80,7 @@ This project uses agentic programming where AI agents collaborate with a Product
 **Development Phases:**
 
 - **Contracting** (Gray): Establish collaboration rules and agent cooperation specification
-- **Inception** (Green): Define requirements in Software Requirements Specification (SRS)
+- **Inception** (Green): Define requirements in Backlog
 - **Elaboration** (Yellow): Create and review design with iterative refinement
 - **Construction** (Blue): Implement, test, and refine code with continuous feedback
 
@@ -89,7 +89,7 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 ## Documentation
 
 **Core Documentation:**
-- `SRS.md` - Software Requirements Specification and backlog
+- `BACKLOG.md` - Project backlog with features and requirements
 - `PLAN.md` - Sprint iteration plans and status
 - `rules/` - Development process guidelines and rules
 

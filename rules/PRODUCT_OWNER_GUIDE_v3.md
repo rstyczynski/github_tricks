@@ -45,9 +45,9 @@ Cooperation workflow is presented on the following diagram:
 Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
 
 ```prompt
-We are now in contracting phase. Project scope is defined in `SRS.md`, and the implementation plan is at `PLAN.md`. Already performed work is documented in 'progress' directory.
+We are now in contracting phase. Project scope is defined in `BACKLOG.md`, and the implementation plan is at `PLAN.md`. Already performed work is documented in 'progress' directory.
 
-Before next steps, read SRS/PLAN files and follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
+Before next steps, read BACKLOG/PLAN files and follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
 
 Enumerate required changes as instructed.
 
@@ -70,15 +70,15 @@ Summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is th
 
 The Product Owner leads the design and implementation process. The Agent is treated as a real Implementor, collaborating through inception, design, implementation, testing, and documentation phases. Refer to files in `rules` directory for detailed rules shaping the project.
 
-Once the SRS document is ready, the Product Owner commands agent to read the document. This is a **starting point** of any subsequent sprints to be executed after execution break, having other sprint ready.
+Once the BACKLOG document is ready, the Product Owner commands agent to read the document. This is a **starting point** of any subsequent sprints to be executed after execution break, having other sprint ready.
 
 ```prompt
-We are now in inception phase. Look into the SRS document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables. 
+We are now in inception phase. Look into the BACKLOG document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables. 
 
 If all is clear summarize your understanding in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
 ```
 
-When the SRS is updated during this phase, the agent is asked to read it again.
+When the BACKLOG is updated during this phase, the agent is asked to read it again.
 
 ```prompt
 The document has been updated. Confirm whether everything is now clear or specify any remaining uncertainties.
@@ -97,7 +97,7 @@ Confirm your understanding, and summarize this conversation in `progress/incepti
 Request design activities and confirm that the Agent is aware of and will comply with all applicable rules and best practices.
 
 ```prompt
-We are now in elaboration phase. Look into the SRS document – focus on Sprints in status `Progress`.
+We are now in elaboration phase. Look into the BACKLOG document – focus on Sprints in status `Progress`.
 
 Document the design. Once completed, wait for review and further instructions.
 ```
