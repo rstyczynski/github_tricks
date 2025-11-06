@@ -63,15 +63,15 @@ Status: failed
 
 ## Sprint 14
 
-Status: under_analysis
+Status: under_design
 
 ### GH-20. Merge Pull Request
 
-Status: analysed
+Status: designed
 
 ### GH-22. Pull Request Comments
 
-Status: analysed
+Status: designed
 
 ### GH-17. Create Pull Request
 
