@@ -7,7 +7,11 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 ### Workflow Management
 
 - **Trigger & Track**: Dispatch workflows and correlate run IDs (UUID-based, median 17s, see `tests/correlation-timings.json`)
+  - `gh` CLI version: `trigger-and-track.sh`
+  - REST API version: `trigger-workflow-curl.sh` + `correlate-workflow-curl.sh` (Sprint 15)
 - **Post-Run Log Retrieval**: Fetch and aggregate workflow logs after completion
+  - `gh` CLI version: `fetch-run-logs.sh`
+  - REST API version: `fetch-logs-curl.sh` (Sprint 15)
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
 - **Workflow Cancellation**: Cancel workflows in requested or running states
 - **Benchmarking**: Measure timing for correlation and log retrieval
@@ -82,8 +86,11 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 
 **Core Tools:**
 
-- `trigger-and-track.sh` - Trigger workflow and retrieve run ID via UUID correlation
-- `fetch-run-logs.sh` - Download and aggregate logs after run completion
+- `trigger-and-track.sh` - Trigger workflow and retrieve run ID via UUID correlation (gh CLI)
+- `trigger-workflow-curl.sh` - Trigger workflow using REST API (curl, Sprint 15)
+- `correlate-workflow-curl.sh` - Correlate workflow runs using REST API (curl, Sprint 15)
+- `fetch-run-logs.sh` - Download and aggregate logs after run completion (gh CLI)
+- `fetch-logs-curl.sh` - Fetch logs using REST API (curl, Sprint 15)
 - `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
 - `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
 - `cancel-run.sh` - Cancel workflows in requested or running states
@@ -173,6 +180,7 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 **Current Status:**
 
+- Sprint 15: ⏳ In Progress (REST API Validation - GH-14, GH-15, GH-16)
 - Sprint 14: ✅ Done (PR Merge & Comments)
 - Sprint 13: ✅ Done (PR Management)
 - Sprint 11: ✅ Done (Workflow Cancellation)
