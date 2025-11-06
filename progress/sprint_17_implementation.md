@@ -190,19 +190,284 @@ artifacts/
 
 ## Usage Examples
 
-### Example 1: Download Single Artifact
+### Example 1: Download Single Artifact (Fully Executable)
+
+This example demonstrates a complete workflow from creating a workflow that produces artifacts to downloading them.
+
+**Step 1: Create a workflow that produces artifacts**
+
+The workflow file `.github/workflows/artifact-producer.yml` is already created. It produces two artifacts:
+- `test-artifact`: Contains greeting.txt, build-info.txt, and metadata.json
+- `build-output`: Contains only build-info.txt
+
+**Step 2: Trigger the workflow and get correlation ID**
 
 ```bash
-# Get artifact ID from Sprint 16
-artifact_id=$(scripts/list-artifacts-curl.sh --run-id "$run_id" --json | \
-  jq -r '.artifacts[0].id')
+# Generate a unique correlation ID
+CORRELATION_ID=$(uuidgen)
 
-# Download artifact
-scripts/download-artifact-curl.sh --artifact-id "$artifact_id"
+# Trigger the workflow
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow artifact-producer.yml \
+  --input correlation_id="$CORRELATION_ID" \
+  --token-file .secrets/token \
+  --json)
+
+# Extract correlation ID from result
+echo "$TRIGGER_RESULT" | jq -r '.correlation_id'
+```
+
+**Step 3: Correlate to get run_id**
+
+```bash
+# Wait a few seconds for workflow to appear in API (typically 2-5 seconds)
+sleep 5
+
+# Get run_id using correlation
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow artifact-producer.yml \
+  --token-file .secrets/token \
+  --json-only)
+
+echo "Run ID: $RUN_ID"
+```
+
+**Step 4: Wait for workflow completion**
+
+```bash
+# Poll until workflow completes (max 5 minutes)
+# Using REST API directly to check run status
+MAX_WAIT=300
+ELAPSED=0
+INTERVAL=10
+
+# Get repository from git config
+OWNER_REPO=$(git config --get remote.origin.url | sed -E 's|.*github.com[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|')
+TOKEN=$(cat .secrets/token)
+
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+  # Check run status via REST API
+  RUN_STATUS=$(curl -sS \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$OWNER_REPO/actions/runs/$RUN_ID" | \
+    jq -r '.status // "unknown"')
+  
+  if [ "$RUN_STATUS" = "completed" ]; then
+    echo "Workflow completed!"
+    break
+  fi
+  
+  echo "Waiting for completion... (status: $RUN_STATUS, elapsed: ${ELAPSED}s)"
+  sleep $INTERVAL
+  ELAPSED=$((ELAPSED + INTERVAL))
+done
+
+if [ "$RUN_STATUS" != "completed" ]; then
+  echo "Error: Workflow did not complete within ${MAX_WAIT} seconds"
+  exit 1
+fi
+```
+
+**Step 5: List artifacts to get artifact ID**
+
+```bash
+# List artifacts for the run
+ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --token-file .secrets/token --json)
+
+# Display available artifacts
+echo "$ARTIFACTS_JSON" | jq -r '.artifacts[] | "\(.id) - \(.name) (\(.size_in_bytes) bytes)"'
+
+# Get the first artifact ID
+ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id')
+
+echo "Downloading artifact ID: $ARTIFACT_ID"
+```
+
+**Step 6: Download the artifact**
+
+```bash
+# Download single artifact
+scripts/download-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --token-file .secrets/token
 
 # Output:
 # Downloading artifact: test-artifact (ID: 123456)
 #   Downloaded to: artifacts/test-artifact.zip
+```
+
+**Step 7: Verify the download**
+
+```bash
+# Check downloaded file
+ls -lh artifacts/test-artifact.zip
+
+# Extract and view contents (if you want to see what's inside)
+unzip -l artifacts/test-artifact.zip
+
+# Or extract it
+unzip -q artifacts/test-artifact.zip -d artifacts/test-artifact
+cat artifacts/test-artifact/greeting.txt
+cat artifacts/test-artifact/metadata.json | jq .
+```
+
+**Complete Copy-Paste Script**
+
+Here's the complete script you can copy-paste and execute:
+
+```bash
+#!/bin/bash
+set -e
+
+# Step 1: Generate correlation ID
+CORRELATION_ID=$(uuidgen)
+echo "=== Step 1: Correlation ID ==="
+echo "Correlation ID: $CORRELATION_ID"
+echo ""
+
+# Step 2: Trigger workflow
+echo "=== Step 2: Triggering workflow ==="
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow artifact-producer.yml \
+  --input correlation_id="$CORRELATION_ID" \
+  --token-file .secrets/token \
+  --json)
+echo "$TRIGGER_RESULT" | jq .
+echo ""
+
+# Step 3: Wait and correlate
+echo "=== Step 3: Waiting for workflow to appear (5 seconds) ==="
+sleep 5
+
+echo "=== Step 4: Getting run_id ==="
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow artifact-producer.yml \
+  --token-file .secrets/token \
+  --json-only)
+echo "Run ID: $RUN_ID"
+echo ""
+
+# Step 5: Wait for completion
+echo "=== Step 5: Waiting for workflow completion ==="
+MAX_WAIT=300
+ELAPSED=0
+INTERVAL=10
+
+# Get repository and token for status check
+OWNER_REPO=$(git config --get remote.origin.url | sed -E 's|.*github.com[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|')
+TOKEN=$(cat .secrets/token)
+
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+  RUN_STATUS=$(curl -sS \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$OWNER_REPO/actions/runs/$RUN_ID" 2>/dev/null | \
+    jq -r '.status // "unknown"')
+  
+  if [ "$RUN_STATUS" = "completed" ]; then
+    echo "✓ Workflow completed!"
+    break
+  fi
+  
+  printf "\rWaiting... (status: %s, elapsed: %ds)" "$RUN_STATUS" "$ELAPSED"
+  sleep $INTERVAL
+  ELAPSED=$((ELAPSED + INTERVAL))
+done
+echo ""
+
+if [ "$RUN_STATUS" != "completed" ]; then
+  echo "Error: Workflow did not complete within ${MAX_WAIT} seconds"
+  exit 1
+fi
+
+# Step 6: List artifacts
+echo "=== Step 6: Listing artifacts ==="
+ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --token-file .secrets/token --json)
+echo "$ARTIFACTS_JSON" | jq -r '.artifacts[] | "  \(.id) - \(.name) (\(.size_in_bytes) bytes)"'
+echo ""
+
+# Step 7: Get artifact ID
+ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id')
+echo "Selected artifact ID: $ARTIFACT_ID"
+echo ""
+
+# Step 8: Download artifact
+echo "=== Step 7: Downloading artifact ==="
+scripts/download-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --token-file .secrets/token
+echo ""
+
+# Step 9: Verify download
+echo "=== Step 8: Verifying download ==="
+ls -lh artifacts/test-artifact.zip
+echo ""
+echo "Artifact contents:"
+unzip -l artifacts/test-artifact.zip
+echo ""
+echo "✓ Example completed successfully!"
+echo "Downloaded artifact: artifacts/test-artifact.zip"
+```
+
+**Prerequisites:**
+
+Before running the example, ensure you have:
+1. GitHub token in `.secrets/token`
+2. Required commands: `jq`, `uuidgen`, `unzip`
+3. The workflow file `.github/workflows/artifact-producer.yml` exists
+4. You're in a git repository with GitHub remote configured
+
+**Expected Output:**
+
+```
+=== Step 1: Correlation ID ===
+Correlation ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+
+=== Step 2: Triggering workflow ===
+{
+  "workflow": "artifact-producer.yml",
+  "workflow_id": 123456,
+  "ref": "main",
+  "correlation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "status": "dispatched"
+}
+
+=== Step 3: Waiting for workflow to appear (5 seconds) ===
+
+=== Step 4: Getting run_id ===
+Run ID: 1234567890
+
+=== Step 5: Waiting for workflow completion ===
+Waiting... (status: in_progress, elapsed: 0s)
+Waiting... (status: in_progress, elapsed: 10s)
+✓ Workflow completed!
+
+=== Step 6: Listing artifacts ===
+  123456 - test-artifact (1024 bytes)
+  123457 - build-output (256 bytes)
+
+Selected artifact ID: 123456
+
+=== Step 7: Downloading artifact ===
+Downloading artifact: test-artifact (ID: 123456)
+  Downloaded to: artifacts/test-artifact.zip
+
+=== Step 8: Verifying download ===
+-rw-r--r--  1 user  staff  1.0K Nov  6 15:30 artifacts/test-artifact.zip
+
+Artifact contents:
+Archive:  artifacts/test-artifact.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+       30  2025-11-06 15:30   greeting.txt
+      120  2025-11-06 15:30   build-info.txt
+      150  2025-11-06 15:30   metadata.json
+---------                     -------
+      300                     3 files
+
+✓ Example completed successfully!
+Downloaded artifact: artifacts/test-artifact.zip
 ```
 
 ### Example 2: Download Single Artifact with Extraction

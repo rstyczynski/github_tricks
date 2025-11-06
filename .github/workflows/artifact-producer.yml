@@ -1,0 +1,58 @@
+name: Artifact Producer
+
+run-name: >
+  Artifact Producer${{ inputs.correlation_id != '' && format(' ({0})', inputs.correlation_id) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      correlation_id:
+        description: "Optional correlation token for tracking"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create test files
+        run: |
+          mkdir -p dist
+          echo "Hello from artifact producer!" > dist/greeting.txt
+          echo "Build timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.txt
+          echo "Run ID: ${{ github.run_id }}" >> dist/build-info.txt
+          if [[ -n "${{ inputs.correlation_id }}" ]]; then
+            echo "Correlation ID: ${{ inputs.correlation_id }}" >> dist/build-info.txt
+          fi
+
+      - name: Create JSON artifact
+        run: |
+          jq -n \
+            --arg run_id "${{ github.run_id }}" \
+            --arg correlation_id "${{ inputs.correlation_id }}" \
+            --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              run_id: $run_id,
+              correlation_id: $correlation_id,
+              timestamp: $timestamp,
+              status: "success"
+            }' > dist/metadata.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifact
+          path: dist/
+          retention-days: 90
+
+      - name: Upload second artifact (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/build-info.txt
+          retention-days: 90
+
