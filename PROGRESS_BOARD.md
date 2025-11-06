@@ -45,12 +45,18 @@ Status: tested
 
 ## Sprint 12
 
-Status: under_analysis
+Status: failed
+
+**Reason**: GitHub does not provide native scheduling for workflow_dispatch events. External schedulers are not an option in this project.
 
 ### GH-8. Schedule workflow
 
-Status: under_analysis
+Status: failed
+
+**Reason**: GitHub API does not support scheduling workflow_dispatch events natively. External scheduler solutions are not allowed in this project.
 
 ### GH-9. Cancel scheduled workflow
 
-Status: under_analysis
+Status: failed
+
+**Reason**: Depends on GH-8, which cannot be implemented due to GitHub API limitations.

@@ -350,3 +350,22 @@
 
 ✅ Ready to proceed to Elaboration phase after clarifications received.
 
+## Sprint Failure Decision
+
+**Date**: 2025-01-15
+
+**Decision**: Sprint 12 marked as **Failed**
+
+**Reason**: 
+- GitHub does not provide native scheduling for workflow_dispatch events
+- External schedulers (cron, systemd timers, cloud schedulers) are not an option in this project
+- Alternative approach (`on: schedule: cron:` in workflow definition) is static and not dispatch-based, which does not meet the requirement
+
+**Impact**:
+- GH-8 (Schedule workflow): Cannot be implemented - GitHub API limitation
+- GH-9 (Cancel scheduled workflow): Cannot be implemented - Depends on GH-8
+
+**Documentation Updated**:
+- `PLAN.md`: Sprint 12 status changed from "Progress" to "Failed"
+- `PROGRESS_BOARD.md`: Sprint 12 and backlog items marked as "failed" with reason documented
+
