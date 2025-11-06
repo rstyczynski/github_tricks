@@ -147,7 +147,7 @@ Backlog Items:
 
 ## Sprint 15
 
-Status: Proposed
+Status: Done
 
 Backlog Items:
 
@@ -156,3 +156,33 @@ Backlog Items:
 * GH-16. Fetch logs with REST API
 
 Validate existing workflow features (GH-2, GH-3, GH-5) using pure REST API with curl instead of `gh` CLI. Follow the pattern established in Sprint 9, using token authentication from `./secrets` directory. All implementations should use curl for API calls and provide comprehensive error handling.
+
+## Sprint 16
+
+Status: Progress
+
+Backlog Items:
+
+* GH-23. List workflow artifacts
+
+Extend workflow management capabilities with artifact listing operations. Implement REST API-based artifact listing using curl, following the pattern established in Sprint 15. The implementation should use token authentication from `./secrets` directory, handle pagination, support filtering by artifact name, and provide comprehensive error handling. This sprint complements existing workflow log retrieval features by enabling discovery of artifacts produced by workflows.
+
+## Sprint 17
+
+Status: Proposed
+
+Backlog Items:
+
+* GH-24. Download workflow artifacts
+
+Extend workflow management capabilities with artifact download operations. Implement REST API-based artifact download using curl, following the pattern established in Sprint 15. The implementation should use token authentication from `./secrets` directory, handle large file downloads with proper streaming, support downloading individual artifacts or all artifacts for a run, and provide comprehensive error handling for scenarios such as artifacts not yet available or expired artifacts.
+
+## Sprint 18
+
+Status: Proposed
+
+Backlog Items:
+
+* GH-25. Delete workflow artifacts
+
+Extend workflow management capabilities with artifact deletion operations. Implement REST API-based artifact deletion using curl, following the pattern established in Sprint 15. The implementation should use token authentication from `./secrets` directory, support deleting individual artifacts or all artifacts for a run, validate deletion permissions, and provide comprehensive error handling for scenarios such as artifacts already deleted or insufficient permissions.

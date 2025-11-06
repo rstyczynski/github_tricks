@@ -122,3 +122,15 @@ Merge pull request with different merge strategies including merge commit, squas
 
 Add, update, and delete comments on pull requests including both general PR comments and inline code review comments. This feature enables programmatic code review workflows, allowing automated or scripted review processes to interact with PR discussions. The implementation should support adding comments at specific line positions for code reviews, updating existing comments, deleting comments, and reacting to comments with emojis. API endpoint: `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments`.
 
+### GH-23. List workflow artifacts
+
+List artifacts produced by a workflow run using REST API. This feature enables querying artifacts associated with a specific workflow run, filtering by artifact name, and retrieving artifact metadata including size, creation date, and expiration date. The implementation should handle authentication with token from `./secrets` directory, support pagination for runs with many artifacts, and provide proper error handling for scenarios such as invalid run IDs or expired artifacts. API endpoint: `GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts`.
+
+### GH-24. Download workflow artifacts
+
+Download artifacts produced by a workflow run using REST API. This feature enables programmatic retrieval of workflow artifacts for further processing, analysis, or distribution. The implementation should handle authentication with token from `./secrets` directory, support downloading individual artifacts or all artifacts for a run, handle large file downloads with proper streaming, and provide proper error handling for scenarios such as artifacts not yet available, expired artifacts, or download failures. API endpoint: `GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip`.
+
+### GH-25. Delete workflow artifacts
+
+Delete artifacts from a workflow run using REST API. This feature enables cleanup of artifacts to manage repository storage and comply with retention policies. The implementation should handle authentication with token from `./secrets` directory, support deleting individual artifacts or all artifacts for a run, validate deletion permissions, and provide proper error handling for scenarios such as artifacts already deleted or insufficient permissions. API endpoint: `DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}`.
+
