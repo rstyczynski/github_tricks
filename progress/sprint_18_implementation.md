@@ -43,6 +43,308 @@ Created `scripts/delete-artifact-curl.sh` script that deletes workflow artifacts
 
 **Status**: Script implemented and tested. Validation tests passed. Integration tests require GitHub repository access with workflow runs that produce artifacts.
 
+## User Documentation
+
+### Quick Start
+
+The `delete-artifact-curl.sh` script provides a safe and efficient way to delete workflow artifacts from GitHub Actions runs. It supports both single artifact deletion and bulk deletion operations.
+
+**Prerequisites**:
+- GitHub token with Actions: Write permissions stored in `.secrets/token` or `.secrets/github_token`
+- Valid artifact IDs or workflow run IDs
+- Repository access (auto-detected from git or specified via `--repo`)
+
+### Educational Sequences (Copy/Paste Ready)
+
+#### Sequence 1: Basic Single Artifact Deletion
+
+This sequence demonstrates how to delete a single artifact with confirmation:
+
+```bash
+# Step 1: List artifacts to find the artifact ID
+scripts/list-artifacts-curl.sh --run-id 1234567890
+
+# Step 2: Delete the artifact (will prompt for confirmation)
+scripts/delete-artifact-curl.sh --artifact-id 123456
+
+# Step 3: When prompted, type 'y' to confirm deletion
+# Expected prompt: "Are you sure you want to delete artifact 123456 (artifact-name)? [y/N]:"
+
+# Step 4: Verify deletion by listing artifacts again
+scripts/list-artifacts-curl.sh --run-id 1234567890
+# Expected: The deleted artifact should no longer appear in the list
+```
+
+**Expected Output**:
+```
+Are you sure you want to delete artifact 123456 (test-artifact)? [y/N]: y
+Deleting artifact 123456...
+  ✓ Deleted artifact 123456
+```
+
+#### Sequence 2: Bulk Deletion with Preview
+
+This sequence demonstrates safe bulk deletion using dry-run mode first:
+
+```bash
+# Step 1: Preview what would be deleted (dry-run)
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all --dry-run
+
+# Step 2: Review the output to confirm which artifacts will be deleted
+# Expected: List of artifacts with names and sizes
+
+# Step 3: If satisfied, delete all artifacts (with confirmation)
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all
+
+# Step 4: When prompted, type 'y' to confirm
+# Expected prompt: "Found <n> artifacts. Delete all? [y/N]:"
+
+# Step 5: Verify all artifacts deleted
+scripts/list-artifacts-curl.sh --run-id 1234567890
+# Expected: "No artifacts found" or empty list
+```
+
+**Expected Output**:
+```
+Dry-run: Would delete 3 artifact(s):
+  - Artifact 123456 (test-artifact, 1.0 KB)
+  - Artifact 123457 (build-output, 2.5 MB)
+  - Artifact 123458 (coverage-report, 500 KB)
+
+Found 3 artifacts for run 1234567890. Delete all? [y/N]: y
+Found 3 artifact(s) for run 1234567890
+Deleting artifacts...
+  ✓ Deleted artifact 123456 (test-artifact)
+  ✓ Deleted artifact 123457 (build-output)
+  ✓ Deleted artifact 123458 (coverage-report)
+
+Summary: 3 deleted, 0 failed
+```
+
+#### Sequence 3: Complete Artifact Lifecycle Management
+
+This sequence demonstrates the complete artifact management workflow:
+
+```bash
+# Step 1: Trigger a workflow that produces artifacts
+scripts/trigger-workflow-curl.sh --workflow .github/workflows/dispatch-webhook.yml \
+  --input webhook_url="$WEBHOOK_URL" --json > trigger.json
+
+# Step 2: Extract correlation ID and get run ID
+correlation_id=$(jq -r '.correlation_id' trigger.json)
+run_id=$(scripts/correlate-workflow-curl.sh --correlation-id "$correlation_id" \
+  --workflow dispatch-webhook.yml --json-only)
+
+# Step 3: Wait for workflow completion
+scripts/wait-workflow-completion-curl.sh --run-id "$run_id"
+
+# Step 4: List artifacts produced by the workflow
+scripts/list-artifacts-curl.sh --run-id "$run_id"
+
+# Step 5: Download artifacts for backup (optional)
+scripts/download-artifact-curl.sh --run-id "$run_id" --all --extract
+
+# Step 6: Delete artifacts after processing
+scripts/delete-artifact-curl.sh --run-id "$run_id" --all --confirm
+
+# Step 7: Verify deletion
+scripts/list-artifacts-curl.sh --run-id "$run_id"
+# Expected: No artifacts found
+```
+
+**Expected Output**:
+```
+# Step 4: List artifacts
+Artifacts for run 1234567890:
+  ID        Name            Size      Created              Expires
+  123456    test-artifact   1.0 KB    2025-01-27 12:00:00  2025-04-27 12:00:00
+
+# Step 6: Delete artifacts
+Found 1 artifact(s) for run 1234567890
+Deleting artifacts...
+  ✓ Deleted artifact 123456 (test-artifact)
+
+Summary: 1 deleted, 0 failed
+
+# Step 7: Verify deletion
+No artifacts found for run 1234567890
+```
+
+#### Sequence 4: Selective Deletion with Name Filtering
+
+This sequence demonstrates how to delete only specific artifacts matching a name pattern:
+
+```bash
+# Step 1: List all artifacts to see what's available
+scripts/list-artifacts-curl.sh --run-id 1234567890
+
+# Step 2: Preview deletions matching a filter pattern
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all \
+  --name-filter "test-" --dry-run
+
+# Step 3: Delete only artifacts matching the filter
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all \
+  --name-filter "test-" --confirm
+
+# Step 4: Verify only matching artifacts were deleted
+scripts/list-artifacts-curl.sh --run-id 1234567890
+# Expected: Only artifacts NOT matching "test-" remain
+```
+
+**Expected Output**:
+```
+# Step 2: Preview deletions
+Dry-run: Would delete 2 artifact(s):
+  - Artifact 123456 (test-artifact-1, 1.0 KB)
+  - Artifact 123457 (test-artifact-2, 2.0 KB)
+
+# Step 3: Delete filtered artifacts
+Found 2 artifact(s) for run 1234567890
+Deleting artifacts...
+  ✓ Deleted artifact 123456 (test-artifact-1)
+  ✓ Deleted artifact 123457 (test-artifact-2)
+
+Summary: 2 deleted, 0 failed
+```
+
+#### Sequence 5: Automation-Friendly Deletion (No Prompts)
+
+This sequence demonstrates deletion in automated scripts where prompts are not desired:
+
+```bash
+# Delete single artifact without confirmation prompt
+scripts/delete-artifact-curl.sh --artifact-id 123456 --confirm
+
+# Delete all artifacts without confirmation prompt
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all --confirm
+
+# Delete filtered artifacts without confirmation prompt
+scripts/delete-artifact-curl.sh --run-id 1234567890 --all \
+  --name-filter "temp-" --confirm
+```
+
+**Expected Output**:
+```
+Deleting artifact 123456...
+  ✓ Deleted artifact 123456
+```
+
+**Note**: Use `--confirm` flag carefully in automation. Consider using `--dry-run` first to verify what will be deleted.
+
+### Common Use Cases
+
+#### Use Case 1: Cleanup After Testing
+
+After running tests and downloading artifacts, clean up to save storage:
+
+```bash
+# Download artifacts for analysis
+scripts/download-artifact-curl.sh --run-id "$run_id" --all --extract
+
+# Analyze artifacts...
+
+# Clean up artifacts from GitHub
+scripts/delete-artifact-curl.sh --run-id "$run_id" --all --confirm
+```
+
+#### Use Case 2: Selective Cleanup
+
+Delete only temporary artifacts while keeping important ones:
+
+```bash
+# Delete only temporary artifacts
+scripts/delete-artifact-curl.sh --run-id "$run_id" --all \
+  --name-filter "temp-" --confirm
+
+# Keep production artifacts intact
+```
+
+#### Use Case 3: Safe Preview Before Deletion
+
+Always preview before bulk deletion:
+
+```bash
+# Preview first
+scripts/delete-artifact-curl.sh --run-id "$run_id" --all --dry-run
+
+# Review output, then delete if correct
+scripts/delete-artifact-curl.sh --run-id "$run_id" --all --confirm
+```
+
+### Error Handling Examples
+
+#### Example 1: Insufficient Permissions
+
+```bash
+scripts/delete-artifact-curl.sh --artifact-id 123456 --confirm
+```
+
+**Expected Output** (if token lacks write permissions):
+```
+Deleting artifact 123456...
+  ✗ Failed to delete artifact 123456: Insufficient permissions
+```
+
+**Solution**: Ensure token has Actions: Write permissions.
+
+#### Example 2: Already Deleted Artifact (Idempotent)
+
+```bash
+# Attempt to delete an already-deleted artifact
+scripts/delete-artifact-curl.sh --artifact-id 123456 --confirm
+```
+
+**Expected Output**:
+```
+Deleting artifact 123456...
+  ✓ Artifact 123456 already deleted (idempotent)
+```
+
+**Note**: Script treats 404 (not found) as success, making deletion idempotent and safe to retry.
+
+#### Example 3: Invalid Artifact ID
+
+```bash
+scripts/delete-artifact-curl.sh --artifact-id invalid
+```
+
+**Expected Output**:
+```
+Error: Invalid artifact ID format: invalid
+```
+
+**Solution**: Use numeric artifact IDs only.
+
+### Best Practices
+
+1. **Always use dry-run first**: Preview deletions before executing
+   ```bash
+   scripts/delete-artifact-curl.sh --run-id "$run_id" --all --dry-run
+   ```
+
+2. **Download before deleting**: Keep backups of important artifacts
+   ```bash
+   scripts/download-artifact-curl.sh --run-id "$run_id" --all
+   scripts/delete-artifact-curl.sh --run-id "$run_id" --all --confirm
+   ```
+
+3. **Use name filters**: Delete selectively when possible
+   ```bash
+   scripts/delete-artifact-curl.sh --run-id "$run_id" --all \
+     --name-filter "temp-" --confirm
+   ```
+
+4. **Verify deletion**: Always verify artifacts are deleted
+   ```bash
+   scripts/list-artifacts-curl.sh --run-id "$run_id"
+   ```
+
+5. **Handle errors gracefully**: Script continues on individual failures in bulk mode
+   ```bash
+   # Script reports summary even if some deletions fail
+   Summary: 2 deleted, 1 failed
+   ```
+
 ## Implementation Approach
 
 ### Shared Components
@@ -204,7 +506,10 @@ scripts/delete-artifact-curl.sh --run-id 1234567890 --all --confirm
 - Testing requires GitHub repository access with workflow runs that produce artifacts
 
 **Deliverables**:
-- ✅ Design document complete
-- ✅ Implementation script complete
-- ⏳ Test results (pending GitHub access)
+- ✅ Design document complete (`progress/sprint_18_design.md`)
+- ✅ Implementation script complete (`scripts/delete-artifact-curl.sh`)
+- ✅ User documentation complete (this document)
+- ✅ Functional tests complete (`progress/sprint_18_tests.md`)
+- ✅ Validation tests executed (5/5 passed)
+- ⏳ Integration tests (pending GitHub access)
 
