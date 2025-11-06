@@ -12,8 +12,9 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 - **Post-Run Log Retrieval**: Fetch and aggregate workflow logs after completion
   - `gh` CLI version: `fetch-run-logs.sh`
   - REST API version: `fetch-logs-curl.sh` (Sprint 15)
-- **Artifact Management**: List workflow artifacts with filtering and pagination
-  - REST API version: `list-artifacts-curl.sh` (Sprint 16)
+- **Artifact Management**: List and download workflow artifacts with filtering and pagination
+  - List artifacts: `list-artifacts-curl.sh` (Sprint 16)
+  - Download artifacts: `download-artifact-curl.sh` (Sprint 17)
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
 - **Workflow Cancellation**: Cancel workflows in requested or running states
 - **Benchmarking**: Measure timing for correlation and log retrieval
@@ -58,6 +59,21 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 # List artifacts with name filter
 ./scripts/list-artifacts-curl.sh --run-id <run_id> --name-filter "build-"
 
+# Download single artifact
+./scripts/download-artifact-curl.sh --artifact-id <artifact_id>
+
+# Download and extract single artifact
+./scripts/download-artifact-curl.sh --artifact-id <artifact_id> --extract
+
+# Download all artifacts from a run
+./scripts/download-artifact-curl.sh --run-id <run_id> --all
+
+# Download all artifacts from a run and extract
+./scripts/download-artifact-curl.sh --run-id <run_id> --all --extract
+
+# Download filtered artifacts using correlation ID
+./scripts/download-artifact-curl.sh --correlation-id <uuid> --all --name-filter "build-" --extract
+
 # Cancel a running workflow
 ./scripts/cancel-run.sh --run-id <run_id>
 ```
@@ -100,6 +116,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 - `fetch-run-logs.sh` - Download and aggregate logs after run completion (gh CLI)
 - `fetch-logs-curl.sh` - Fetch logs using REST API (curl, Sprint 15)
 - `list-artifacts-curl.sh` - List workflow artifacts with filtering and pagination (curl, Sprint 16)
+- `download-artifact-curl.sh` - Download workflow artifacts with optional extraction (curl, Sprint 17)
 - `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
 - `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
 - `cancel-run.sh` - Cancel workflows in requested or running states
@@ -189,6 +206,7 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 **Current Status:**
 
+- Sprint 17: ✅ Done (Artifact Download - GH-24)
 - Sprint 16: ✅ Done (Artifact Listing - GH-23)
 - Sprint 15: ✅ Done (REST API Validation - GH-14, GH-15, GH-16)
 - Sprint 14: ✅ Done (PR Merge & Comments)
