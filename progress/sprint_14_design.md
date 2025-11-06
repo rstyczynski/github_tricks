@@ -14,7 +14,7 @@ Sprint 14 extends Pull Request management capabilities from Sprint 13 by adding 
 
 **Key Design Decisions**:
 - Use curl-based REST API approach (following Sprint 13 pattern)
-- Token authentication from `./secrets/github_token` file
+- Token authentication from `.secrets/token` file
 - Check mergeable state before merge attempt (informative, prevents unnecessary API calls)
 - Support all three merge strategies with optional commit message customization
 - Single script for PR comments with operation flags (add, update, delete, react)
@@ -47,7 +47,7 @@ Sprint 14 extends Pull Request management capabilities from Sprint 13 by adding 
 ### Authentication
 
 **Token File Pattern** (from Sprint 13):
-- Token stored in: `./secrets/github_token`
+- Token stored in: `.secrets/token`
 - Header format: `Authorization: Bearer <token>`
 - Required permissions: `repo` scope (classic token) or `Pull requests: Write` (fine-grained token)
 
@@ -138,7 +138,7 @@ scripts/merge-pr.sh --pr-number <number> --method <method> [--commit-message <me
 - `--commit-message <message>` - Custom commit message for squash/merge (optional)
 - `--check-mergeable` - Check mergeable state before attempting merge (optional, recommended)
 - `--repo <owner/repo>` - Repository in owner/repo format (auto-detected if omitted)
-- `--token-file <path>` - Path to token file (default: `./secrets/github_token`)
+- `--token-file <path>` - Path to token file (default: `.secrets/token`)
 - `--json` - Output JSON format for programmatic use
 - `--help` - Display usage information
 
@@ -367,7 +367,7 @@ scripts/pr-comments.sh --pr-number <number> --operation <operation> [--body <bod
 - `--commit-id <sha>` - Commit SHA for inline comments (optional, auto-detected if omitted)
 - `--reaction <emoji>` - Emoji reaction: +1, -1, laugh, confused, heart, hooray, rocket, eyes (required for react)
 - `--repo <owner/repo>` - Repository in owner/repo format (auto-detected if omitted)
-- `--token-file <path>` - Path to token file (default: `./secrets/github_token`)
+- `--token-file <path>` - Path to token file (default: `.secrets/token`)
 - `--json` - Output JSON format for programmatic use
 - `--help` - Display usage information
 
@@ -929,7 +929,7 @@ scripts/pr-comments.sh \
 - ✅ Integration via PR number from create-pr.sh output
 
 **Sprint 9 (API Access Pattern)**:
-- ✅ Token file authentication: `./secrets/github_token`
+- ✅ Token file authentication: `.secrets/token`
 - ✅ curl-based REST API calls
 - ✅ Consistent error handling and JSON parsing
 

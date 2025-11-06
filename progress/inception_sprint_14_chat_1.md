@@ -40,7 +40,7 @@ Reviewed Sprint 13 (most relevant) and other completed sprints:
 - GH-18: List Pull Requests (`scripts/list-prs.sh`) - ✅ Tested
 - GH-19: Update Pull Request (`scripts/update-pr.sh`) - ✅ Tested
 - **Key Patterns Established**:
-  - Token authentication from `./secrets/github_token`
+  - Token authentication from `.secrets/token`
   - Repository auto-detection from git config
   - curl-based REST API approach
   - Dual output formats (human-readable and JSON)
@@ -70,14 +70,14 @@ Identified key patterns to reuse from Sprint 13:
 
 **Script Structure Pattern**:
 - `set -euo pipefail` for error handling
-- Token file authentication: `./secrets/github_token`
+- Token file authentication: `.secrets/token`
 - Repository auto-detection from git config
 - Consistent variable naming
 - Comprehensive error messages
 - Help documentation with examples
 
 **Authentication Pattern**:
-- Token file: `./secrets/github_token`
+- Token file: `.secrets/token`
 - curl with Bearer token authentication
 - Consistent error handling
 

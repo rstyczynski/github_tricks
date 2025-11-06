@@ -64,7 +64,7 @@ Created comprehensive design document: `progress/sprint_14_design.md`
 - Required parameters: `--pr-number`, `--method` (merge, squash, rebase)
 - Optional parameters: `--commit-message` (for squash/merge), `--check-mergeable`
 - Repository auto-detection from git config
-- Token authentication from `./secrets/github_token`
+- Token authentication from `.secrets/token`
 - Dual output formats: human-readable (default) and JSON (`--json`)
 
 **API Endpoint**: `PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge`
@@ -95,7 +95,7 @@ Created comprehensive design document: `progress/sprint_14_design.md`
 - Required parameters: `--pr-number`, `--operation` (add, add-inline, update, delete, react, list)
 - Operation-specific parameters (validated per operation)
 - Repository auto-detection from git config
-- Token authentication from `./secrets/github_token`
+- Token authentication from `.secrets/token`
 - Dual output formats: human-readable (default) and JSON (`--json`)
 
 **Operations**:

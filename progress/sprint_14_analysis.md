@@ -95,7 +95,7 @@ Sprint 14 extends the Pull Request management capabilities from Sprint 13 by add
 - GH-18: List Pull Requests (`scripts/list-prs.sh`)
 - GH-19: Update Pull Request (`scripts/update-pr.sh`)
 - **Key Deliverables**:
-  - Token authentication from `./secrets/github_token`
+  - Token authentication from `.secrets/token`
   - Repository auto-detection from git config
   - curl-based REST API approach
   - Dual output formats (human-readable and JSON)
@@ -103,7 +103,7 @@ Sprint 14 extends the Pull Request management capabilities from Sprint 13 by add
   - PR number as primary identifier
 
 **Sprint 9 - API Access Pattern**:
-- Token file authentication: `./secrets/github_token`
+- Token file authentication: `.secrets/token`
 - curl-based REST API calls
 - Direct API calls with full control
 - Consistent error handling and JSON parsing
@@ -128,7 +128,7 @@ Sprint 14 extends the Pull Request management capabilities from Sprint 13 by add
 
 **Key Elements**:
 - `set -euo pipefail` for error handling
-- Token file authentication: `./secrets/github_token`
+- Token file authentication: `.secrets/token`
 - Repository auto-detection from git config
 - Consistent variable naming
 - Comprehensive error messages
@@ -138,7 +138,7 @@ Sprint 14 extends the Pull Request management capabilities from Sprint 13 by add
 
 **Token File Approach**:
 ```bash
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 if [[ ! -f "$TOKEN_FILE" ]]; then
   printf 'Error: Token file not found: %s\n' "$TOKEN_FILE" >&2
   exit 1
