@@ -2,7 +2,7 @@
 
 ## GH-20. Merge Pull Request
 
-Status: Progress
+Status: Accepted
 
 ## GH-22. Pull Request Comments
 

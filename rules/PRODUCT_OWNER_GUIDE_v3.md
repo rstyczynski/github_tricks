@@ -45,7 +45,9 @@ Cooperation workflow is presented on the following diagram:
 Before starting any technical work, inform the Agent about the project scope and applicable cooperation rules.
 
 ```prompt
-We are now in contracting phase. Project scope is defined in `BACKLOG.md`, and the implementation plan is at `PLAN.md`. Already performed work is documented in 'progress' directory.
+# Contracting phase (1/4)
+
+We are now in contracting phase. Your staring point is described in `AGENTS.md` file. Project scope is defined in `BACKLOG.md`, and the implementation plan is at `PLAN.md`. Already performed work is documented in 'progress' directory.
 
 Before next steps, read BACKLOG/PLAN files and follow documents in `rules` directory for details about technology and cooperation rules. You MUST comply with all the documents without exceptions. Confirm your understanding or list any unclear or incorrect points.
 
@@ -56,6 +58,14 @@ Ask questions in case of clarifications needed as instructed.
 Summarize what have to be done.
 
 Confirm when all is clear and you are ready to proceed.
+
+## Any questions?
+
+If anything is not clear raise it now, and stop here.
+
+## Ready to go? 
+
+If all is clear summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent contracting review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions. 
 ```
 
 Once the contracting phase is finished:
@@ -63,6 +73,10 @@ Once the contracting phase is finished:
 1. Summarize review loop, and commit
 
 ```prompt
+# Contracting - confirmation of understating 
+
+Summarize your understanding of the contract. Enumerate your responsibilities, project rules and source documents.
+
 Summarize this conversation in `contracting_review_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent contracting review file to deduct next cnt value. Commit the change to the repository following semantic commit message conventions.
 ```
 
@@ -73,7 +87,15 @@ The Product Owner leads the design and implementation process. The Agent is trea
 Once the BACKLOG document is ready, the Product Owner commands agent to read the document. This is a **starting point** of any subsequent sprints to be executed after execution break, having other sprint ready.
 
 ```prompt
-We are now in inception phase. Look into the BACKLOG document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables. 
+# Inception phase (2/4)
+
+We are now in inception phase. It assumed that you went trough Contracting phase and confirmed your readiness. Look into the `BACKLOG.md` document – focus on Sprints in status `Progress`. Read all documentation and products from Sprint in `Done` state to understand project history and achievements. Reuse all we did previously, and make current work compatible. Summarize your understanding of their goals and deliverables. 
+
+## Any questions?
+
+If anything is not clear raise it now, and stop here.
+
+## Ready to go? 
 
 If all is clear summarize your understanding in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit the change to the repository following semantic commit message convention.
 ```
@@ -89,7 +111,17 @@ Once the plan is satisfactory:
 1. Summarize review loop, and commit
 
 ```prompt
-Confirm your understanding, and summarize this conversation in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit Sprint related changes to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
+# Inception - confirmation of understating 
+
+Summarize your understanding of the project. Enumerate requirements, plan and source documents.
+
+## Any questions?
+
+If anything is not clear raise it now, and stop here.
+
+## Ready to go? 
+
+If all is clear, summarize this conversation in `progress/inception_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequential number of the review file; look into the directory for recent inception review file to deduct next cnt value. Commit Sprint related changes to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
 ```
 
 ## Elaboration
@@ -97,6 +129,8 @@ Confirm your understanding, and summarize this conversation in `progress/incepti
 Request design activities and confirm that the Agent is aware of and will comply with all applicable rules and best practices.
 
 ```prompt
+# Elaboration phase (2/4)
+
 We are now in elaboration phase. Look into the BACKLOG document – focus on Sprints in status `Progress`.
 
 Document the design. Once completed, wait for review and further instructions.
@@ -115,7 +149,17 @@ Once the design is ok:
 3. Summarize review loop, and commit
 
 ```prompt
-Confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the Sprint related changes to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
+# Elaboration - confirmation of completness
+
+Summarize your understanding of the designed elements. Enumerate requirements, plan, major design decissions, source and producted documents.
+
+## Any questions?
+
+If anything is not clear raise it now, and stop here.
+
+## Ready to go?
+
+If all is clear, confirm completion of the design, and summarize the discussion in `progress/elaboration_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent elaboration review file to deduct next cnt value. Commit the Sprint related changes to the repository following semantic commit message convention. Do not change any other documents / file in the local file system!
 ```
 
 ## Construction
@@ -143,7 +187,13 @@ Confirm when all is clear and you are ready to proceed.
 Once confirmed:
 
 ```prompt
-Proceed with implementation for accepted sprints. Run test for each software product to confirm proper execution before passing to the Product Owner.
+# Construction phase (4/4)
+
+Proceed with implementation for accepted sprints. 
+
+Run test for each software product to confirm proper execution before passing to the Product Owner. Run test loops for me. Report to me success or failure once you test loops are finished.
+
+Break functional test loop after 10 attempts to remove obstacles, and raise red flag.
 ```
 
 Here is an implementation review loop. Verify all the agent did by executing implemented tests. Request new tests to cover all cases. To automate tests ask the agent to loop by themselves.
@@ -162,6 +212,8 @@ Once implementation is complete and verified through review:
 4. Summarize review loop, and commit
 
 ```prompt
+# Construction - certificate of completion
+
 Confirm completion of the implementation, and summarize the discussion in `progress/construction_sprint_${no}_chat_${cnt}.md`, where `cnt` is the sequence number of the review file; look into the directory for recent construction review file to deduct next cnt value. Commit all the Sprint related changes to the repository following semantic commit message conventions. Do not change any other documents / file in the local file system!
 ```
 
