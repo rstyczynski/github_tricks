@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/run-utils.sh"
 
 # Defaults
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 RUN_ID=""
 CORRELATION_ID=""
@@ -33,7 +33,7 @@ OPTIONS:
   --paginate                Fetch all pages (default: first page only, 30 items)
   --runs-dir <dir>          Base directory for metadata (default: runs)
   --repo <owner/repo>       Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>       GitHub token file (default: ./secrets/github_token)
+  --token-file <path>       GitHub token file (default: .secrets/token)
   --json                    Output JSON format for programmatic use
   --help                    Show this help message
 

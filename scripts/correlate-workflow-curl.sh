@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/run-utils.sh"
 
 # Defaults
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 CORRELATION_ID=""
 WORKFLOW=""
@@ -34,7 +34,7 @@ OPTIONS:
   --interval <seconds>       Polling interval (default: 3)
   --store-dir <dir>          Directory to store metadata (optional)
   --repo <owner/repo>        Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>        GitHub token file (default: ./secrets/github_token)
+  --token-file <path>        GitHub token file (default: .secrets/token)
   --json-only                Output only JSON (no progress messages)
   --help                     Show this help message
 

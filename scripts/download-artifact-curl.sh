@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/run-utils.sh"
 
 # Defaults
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 ARTIFACT_ID=""
 RUN_ID=""
@@ -40,7 +40,7 @@ OPTIONS:
   --name-filter <pattern>   Filter artifacts by name when using --all (partial match, case-sensitive)
   --runs-dir <dir>          Base directory for metadata (default: runs)
   --repo <owner/repo>       Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>       GitHub token file (default: ./secrets/github_token)
+  --token-file <path>       GitHub token file (default: .secrets/token)
   --help                    Show this help message
 
 EXAMPLES:

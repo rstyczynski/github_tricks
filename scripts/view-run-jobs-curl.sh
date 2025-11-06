@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/run-utils.sh"
 
 # Defaults
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 RUNS_DIR="runs"
 OUTPUT_FORMAT="table"
 VERBOSE=false
@@ -31,7 +31,7 @@ INPUT (first match wins):
 OPTIONS:
   --runs-dir <dir>        Base directory for metadata (default: runs)
   --repo <owner/repo>     Repository (auto-detected if omitted)
-  --token-file <path>     GitHub token file (default: ./secrets/github_token)
+  --token-file <path>     GitHub token file (default: .secrets/token)
   --json                  Output JSON format
   --verbose               Include step-level details
   --watch                 Poll for updates until completion (3s interval)

@@ -4,7 +4,7 @@ set -euo pipefail
 # Trigger GitHub workflow using REST API with curl
 
 # Defaults
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 WORKFLOW=""
 REF=""
@@ -26,7 +26,7 @@ OPTIONS:
   --input key=value        Workflow input (can be specified multiple times)
   --correlation-id <uuid>  Correlation UUID (auto-generated if omitted)
   --repo <owner/repo>      Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>      GitHub token file (default: ./secrets/github_token)
+  --token-file <path>      GitHub token file (default: .secrets/token)
   --json                   Output JSON format for programmatic use
   --help                   Show this help message
 
