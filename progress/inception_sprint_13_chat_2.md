@@ -71,7 +71,7 @@ Identified key patterns to reuse:
 - Human-readable default output
 
 **Authentication Pattern (Sprint 9)**:
-- Token file: `./secrets/github_token`
+- Token file: `.secrets/token`
 - curl with Bearer token authentication
 - Consistent error handling
 

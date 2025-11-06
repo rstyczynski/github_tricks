@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Default values
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 PR_NUMBER=""
 TITLE=""
@@ -26,7 +26,7 @@ OPTIONAL (at least one required):
   --state <state>         PR state: open or closed
   --base <branch>         New target branch
   --repo <owner/repo>     Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>     Path to token file (default: ./secrets/github_token)
+  --token-file <path>     Path to token file (default: .secrets/token)
   --json                  Output JSON format
   --help                  Show this help message
 

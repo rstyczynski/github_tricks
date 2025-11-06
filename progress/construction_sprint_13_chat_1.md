@@ -20,7 +20,7 @@ Implemented three scripts following the design document:
 - Required: `--head`, `--title`
 - Optional: `--base`, `--body`, `--reviewers`, `--labels`, `--issue`, `--draft`
 - Repository auto-detection from git config
-- Token authentication from `./secrets/github_token`
+- Token authentication from `.secrets/token`
 - Dual output formats (human-readable and JSON)
 
 **GH-18: `scripts/list-prs.sh`** (330 lines)
@@ -43,7 +43,7 @@ Implemented three scripts following the design document:
 
 **Key Features Implemented**:
 - ✅ Repository auto-detection from git config (with fallbacks)
-- ✅ Token file authentication (`./secrets/github_token`)
+- ✅ Token file authentication (`.secrets/token`)
 - ✅ Comprehensive error handling for all HTTP status codes
 - ✅ Dynamic JSON request body building (only include provided fields)
 - ✅ Link header parsing for pagination (GH-18)
@@ -75,7 +75,7 @@ Implemented three scripts following the design document:
 **Functional Testing**: ⏳ PENDING
 
 **Status**: Functional testing blocked by missing prerequisites:
-- GitHub token file (`./secrets/github_token`)
+- GitHub token file (`.secrets/token`)
 - GitHub repository access
 - Feature branches for testing create-pr.sh
 - Existing PRs for testing update-pr.sh
@@ -196,7 +196,7 @@ Implemented three scripts following the design document:
 ## Next Steps
 
 **For Product Owner**:
-1. Provide GitHub token file at `./secrets/github_token`
+1. Provide GitHub token file at `.secrets/token`
 2. Ensure repository access for functional testing
 3. Review implementation and approve for functional testing
 

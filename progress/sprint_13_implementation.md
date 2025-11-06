@@ -27,7 +27,7 @@
 - ✅ Required parameters: `--head`, `--title`
 - ✅ Optional parameters: `--base` (default: `main`), `--body`, `--reviewers`, `--labels`, `--issue`, `--draft`
 - ✅ Repository auto-detection from git config
-- ✅ Token authentication from `./secrets/github_token`
+- ✅ Token authentication from `.secrets/token`
 - ✅ Dual output formats: human-readable (default) and JSON (`--json`)
 - ✅ Comprehensive error handling for all HTTP status codes
 - ✅ Request body building with dynamic JSON construction
@@ -52,7 +52,7 @@ scripts/create-pr.sh --head <branch> --title <title> [OPTIONS]
 - ✅ Sorting: `--sort` (created, updated, popularity), `--direction` (asc, desc)
 - ✅ Pagination: `--page`, `--per-page`, `--all` (fetch all pages)
 - ✅ Repository auto-detection from git config
-- ✅ Token authentication from `./secrets/github_token`
+- ✅ Token authentication from `.secrets/token`
 - ✅ Dual output formats: table (default) and JSON (`--json`)
 - ✅ Link header parsing for pagination
 
@@ -77,7 +77,7 @@ scripts/list-prs.sh [OPTIONS]
 - ✅ Optional parameters: `--title`, `--body`, `--state`, `--base`
 - ✅ At least one update field required validation
 - ✅ Repository auto-detection from git config
-- ✅ Token authentication from `./secrets/github_token`
+- ✅ Token authentication from `.secrets/token`
 - ✅ Dual output formats: human-readable (default) and JSON (`--json`)
 - ✅ Merge conflict detection for base branch changes
 - ✅ Comprehensive error handling for all HTTP status codes
@@ -129,7 +129,7 @@ scripts/update-pr.sh --pr-number 123
 **Prerequisites for Functional Testing**:
 1. **GitHub token file**:
    ```bash
-   # Token file must exist at: ./secrets/github_token
+   # Token file must exist at: .secrets/token
    # Token must have 'repo' scope (classic) or 'Pull requests: Write' (fine-grained)
    ```
 
@@ -282,7 +282,7 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 ## Integration with Previous Sprints
 
 **Sprint 9 (API Access Pattern)**: ✅ Verified
-- Token file authentication: `./secrets/github_token`
+- Token file authentication: `.secrets/token`
 - curl-based REST API calls
 - Repository auto-detection from git config
 - Consistent error handling patterns
@@ -298,7 +298,7 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 **None identified in implementation** - All design requirements implemented.
 
 **Functional testing pending**: Cannot execute full test suite without:
-1. GitHub token file at `./secrets/github_token`
+1. GitHub token file at `.secrets/token`
 2. GitHub repository access
 3. Feature branches for testing create-pr.sh
 4. Existing PRs for testing update-pr.sh

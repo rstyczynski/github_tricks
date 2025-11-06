@@ -2,7 +2,7 @@
 
 ## GH-17. Create Pull Request
 
-Status: Progress
+Status: Accepted
 
 ## GH-18. List Pull Requests
 
@@ -18,7 +18,7 @@ Sprint 13 implements Pull Request management capabilities through GitHub REST AP
 
 **Key Design Decisions**:
 - Use curl-based REST API approach (following Sprint 9 pattern)
-- Token authentication from `./secrets/github_token` file
+- Token authentication from `.secrets/token` file
 - Assume branches exist (Unix philosophy - scripts don't create branches)
 - Support both human-readable and JSON output formats
 - Follow established input method priority order
@@ -55,7 +55,7 @@ Sprint 13 implements Pull Request management capabilities through GitHub REST AP
 ### Authentication
 
 **Token File Pattern** (from Sprint 9):
-- Token stored in: `./secrets/github_token`
+- Token stored in: `.secrets/token`
 - Header format: `Authorization: Bearer <token>`
 - Required permissions: `repo` scope (classic token) or `Pull requests: Write` (fine-grained token)
 
@@ -154,7 +154,7 @@ scripts/create-pr.sh --head <branch> --base <branch> --title <title> [--body <bo
 - `--issue <number>` - Issue number to link (optional)
 - `--draft` - Create as draft PR (optional)
 - `--repo <owner/repo>` - Repository in owner/repo format (auto-detected if omitted)
-- `--token-file <path>` - Path to token file (default: `./secrets/github_token`)
+- `--token-file <path>` - Path to token file (default: `.secrets/token`)
 - `--json` - Output JSON format for programmatic use
 - `--help` - Display usage information
 
@@ -210,7 +210,7 @@ Base: main
 
 **1. Load token**:
 ```bash
-TOKEN_FILE="${TOKEN_FILE:-./secrets/github_token}"
+TOKEN_FILE="${TOKEN_FILE:-.secrets/token}"
 if [[ ! -f "$TOKEN_FILE" ]]; then
   echo "Error: Token file not found: $TOKEN_FILE" >&2
   exit 1
@@ -383,7 +383,7 @@ scripts/list-prs.sh [--state <state>] [--head <branch>] [--base <branch>]
 - `--per-page <n>` - Items per page (default: 30, max: 100)
 - `--all` - Fetch all pages automatically (ignores --page)
 - `--repo <owner/repo>` - Repository in owner/repo format (auto-detected if omitted)
-- `--token-file <path>` - Path to token file (default: `./secrets/github_token`)
+- `--token-file <path>` - Path to token file (default: `.secrets/token`)
 - `--json` - Output JSON format for programmatic use
 - `--help` - Display usage information
 
@@ -610,7 +610,7 @@ scripts/update-pr.sh --pr-number <number> [--title <title>] [--body <body>]
 - `--state <state>` - PR state: open or closed (optional)
 - `--base <branch>` - New target branch (optional)
 - `--repo <owner/repo>` - Repository in owner/repo format (auto-detected if omitted)
-- `--token-file <path>` - Path to token file (default: `./secrets/github_token`)
+- `--token-file <path>` - Path to token file (default: `.secrets/token`)
 - `--json` - Output JSON format for programmatic use
 - `--help` - Display usage information
 
@@ -901,7 +901,7 @@ echo "$update_result" | jq -e '.title == "Updated Test PR"' >/dev/null || exit 1
 ## Compatibility with Previous Sprints
 
 **Sprint 9 (API Access Pattern)**:
-- ✅ Reuse token file authentication: `./secrets/github_token`
+- ✅ Reuse token file authentication: `.secrets/token`
 - ✅ Follow curl-based REST API approach
 - ✅ Consistent error handling patterns
 - ✅ Repository auto-detection from git config

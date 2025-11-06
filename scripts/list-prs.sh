@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Default values
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 REPO=""
 STATE="open"
 HEAD=""
@@ -30,7 +30,7 @@ OPTIONAL:
   --per-page <n>          Items per page (default: 30, max: 100)
   --all                   Fetch all pages automatically (ignores --page)
   --repo <owner/repo>     Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>     Path to token file (default: ./secrets/github_token)
+  --token-file <path>     Path to token file (default: .secrets/token)
   --json                  Output JSON format
   --help                  Show this help message
 

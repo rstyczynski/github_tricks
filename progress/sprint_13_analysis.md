@@ -111,7 +111,7 @@ Sprint 13 focuses on implementing Pull Request management capabilities through G
 **Sprint 0 - Prerequisites**:
 - Established tooling: GitHub CLI, Go, Java libraries
 - GitHub CLI authentication with browser-based auth
-- Token file pattern: `./secrets/github_token`
+- Token file pattern: `.secrets/token`
 
 **Sprint 1 - Workflow Triggering and Correlation**:
 - UUID-based correlation mechanism
@@ -139,7 +139,7 @@ Sprint 13 focuses on implementing Pull Request management capabilities through G
 
 **Sprint 9 - Job Status Monitoring (API Variant)**:
 - curl-based REST API implementation
-- Token file authentication: `./secrets/github_token`
+- Token file authentication: `.secrets/token`
 - Direct API calls with full control
 - Consistent error handling and JSON parsing
 
@@ -205,7 +205,7 @@ scripts/create-pr.sh  # Prompts for input
 
 **Token File Approach**:
 ```bash
-TOKEN_FILE="./secrets/github_token"
+TOKEN_FILE=".secrets/token"
 if [[ ! -f "$TOKEN_FILE" ]]; then
   echo "Error: Token file not found: $TOKEN_FILE" >&2
   exit 1
@@ -426,7 +426,7 @@ done
 ### With Previous Sprints
 
 **Sprint 9 (API Access Pattern)**:
-- Reuse token file authentication: `./secrets/github_token`
+- Reuse token file authentication: `.secrets/token`
 - Follow curl-based REST API approach
 - Consistent error handling patterns
 
