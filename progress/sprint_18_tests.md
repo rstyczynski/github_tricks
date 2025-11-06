@@ -149,40 +149,40 @@ if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
   echo "Error: Failed to get valid run_id" >&2
   echo "Please check workflow trigger and correlation"
 else
+  echo "Run ID: $RUN_ID"
 
-echo "Run ID: $RUN_ID"
+  # Step 5: Wait for workflow completion
+  scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
-# Step 5: Wait for workflow completion
-scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+  # Step 6: List artifacts (this produces REAL artifact IDs)
+  echo "=== Listing artifacts ==="
+  ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
+  echo "$ARTIFACTS_JSON" | jq .
 
-# Step 6: List artifacts (this produces REAL artifact IDs)
-echo "=== Listing artifacts ==="
-ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
-echo "$ARTIFACTS_JSON" | jq .
+  # Step 7: Extract first artifact ID (REAL ID from actual run)
+  ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
 
-# Step 7: Extract first artifact ID (REAL ID from actual run)
-ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
+  if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+    echo "Warning: No artifacts found for this run. Skipping deletion test."
+    echo "To test deletion, use a workflow that produces artifacts."
+  else
+    echo "Artifact ID to delete: $ARTIFACT_ID"
 
-if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
-  echo "Warning: No artifacts found for this run. Skipping deletion test."
-  echo "To test deletion, use a workflow that produces artifacts."
-else
+    # Step 8: Preview deletion (dry-run)
+    echo "=== Preview deletion (dry-run) ==="
+    scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --dry-run
 
-echo "Artifact ID to delete: $ARTIFACT_ID"
+    # Step 9: Delete artifact (with confirmation - type 'y' when prompted)
+    echo "=== Deleting artifact ==="
+    echo "When prompted, type 'y' to confirm deletion"
+    scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
 
-# Step 8: Preview deletion (dry-run)
-echo "=== Preview deletion (dry-run) ==="
-scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --dry-run
-
-# Step 9: Delete artifact (with confirmation - type 'y' when prompted)
-echo "=== Deleting artifact ==="
-echo "When prompted, type 'y' to confirm deletion"
-scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
-
-# Step 10: Verify deletion
-echo "=== Verifying deletion ==="
-scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
-# Expected: Deleted artifact should no longer appear
+    # Step 10: Verify deletion
+    echo "=== Verifying deletion ==="
+    scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+    # Expected: Deleted artifact should no longer appear
+  fi
+fi
 ```
 
 **Expected Output** (example):
