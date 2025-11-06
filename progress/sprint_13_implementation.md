@@ -220,7 +220,7 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 
 ### GH-17. Create Pull Request
 
-**Status**: Implemented (⏳ Awaiting Functional Testing)
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 **Requirement**: Create a pull request from a feature branch to main branch using REST API with full control over PR metadata.
 
@@ -236,11 +236,11 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 - shellcheck: ✅ No issues
 - Basic functionality: ✅ --help works, error handling works
 
-**Functional Testing**: ⏳ Requires GitHub token and repository access
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 ### GH-18. List Pull Requests
 
-**Status**: Implemented (⏳ Awaiting Functional Testing)
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 **Requirement**: List pull requests with various filters including state, head branch, base branch, sort order, and direction, with pagination support.
 
@@ -256,11 +256,11 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 - shellcheck: ✅ No issues
 - Basic functionality: ✅ --help works
 
-**Functional Testing**: ⏳ Requires GitHub token and repository access
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 ### GH-19. Update Pull Request
 
-**Status**: Implemented (⏳ Awaiting Functional Testing)
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 **Requirement**: Update pull request properties including title, body, state, and base branch with proper validation and error handling.
 
@@ -277,7 +277,7 @@ scripts/update-pr.sh --pr-number "$PR_NUMBER" --title "Updated Integration Test 
 - shellcheck: ✅ No issues
 - Basic functionality: ✅ --help works, error handling works
 
-**Functional Testing**: ⏳ Requires GitHub token and repository access
+**Status**: ✅ Functional Testing Complete - All tests passed!
 
 ## Integration with Previous Sprints
 
@@ -348,5 +348,53 @@ scripts/update-pr.sh --help
 - Error handling: Correct behavior for missing required parameters
 - Exit codes: Correct (2 for invalid arguments, 1 for API errors)
 
-**Status**: Implementation complete, functional testing blocked by missing GitHub token and repository access
+### Attempt 2: Bug Fix + Functional Testing ✅
+**Date**: 2025-11-06
+**Type**: Bug fix + Full functional testing
+**Result**: ✅ ALL TESTS PASSED
+
+**Bug Fixed**:
+- Issue: Header parsing in `list-prs.sh` was including HTTP headers in JSON response body
+- Root cause: Using `-D -` flag outputs headers to stdout, causing jq parse errors
+- Fix: Changed to `-D /tmp/curl_headers_$$` to separate headers from body
+- Commit: 33c233b
+- Validation: shellcheck clean after fix
+
+**Functional Test Results**:
+
+**Test 1: GH-18 List Pull Requests** ✅
+- List open PRs: Found 0 open PRs (correct)
+- List all PRs: Found 1 closed PR (correct)
+- JSON output: Valid JSON array format
+- Table output: Correctly formatted table
+- Filtering: Works with --state parameter
+- Status: ✅ PASSED
+
+**Test 2: GH-17 Create Pull Request** ✅
+- Created test branch: `test-pr-branch`
+- Created PR #2: test-pr-branch → main
+- Title: "Test PR from script"
+- Body: "This is a test PR created by the script"
+- JSON output: Valid JSON with PR details
+- PR URL: https://github.com/rstyczynski/github_tricks/pull/2
+- Status: ✅ PASSED
+
+**Test 3: GH-19 Update Pull Request** ✅
+- Updated PR #2 title: "Updated Test PR Title"
+- Updated PR #2 body: "Updated body text"
+- Verified update: PR appears in list with updated title
+- Closed PR #2: Successfully changed state to "closed"
+- Verified closure: PR appears in closed PRs list
+- JSON output: Valid JSON with updated PR details
+- Status: ✅ PASSED
+
+**Integration Verification** ✅:
+- create-pr.sh → list-prs.sh: PR appears in list after creation
+- update-pr.sh → list-prs.sh: Updates reflected in list
+- JSON output parsing: Works correctly
+- Human-readable output: Correct format
+
+### Functional Testing Status: COMPLETE ✅
+
+All functional tests passed successfully! All three backlog items (GH-17, GH-18, GH-19) requirements met.
 
