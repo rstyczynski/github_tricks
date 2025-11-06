@@ -117,8 +117,7 @@ Error: Must specify --artifact-id or --run-id/--correlation-id with --all
 
 **Prerequisites**:
 - Valid GitHub token in `.secrets/token` or `.secrets/github_token` with Actions: Write permissions
-- Webhook URL from https://webhook.site (optional, for workflow that uses webhooks)
-- Workflow that produces artifacts (e.g., `dispatch-webhook.yml` or any workflow that creates artifacts)
+- Workflow that produces artifacts (using `artifact-producer.yml` which creates test artifacts)
 
 **Complete Executable Sequence**:
 ```bash
@@ -127,10 +126,8 @@ CORRELATION_ID=$(uuidgen)
 echo "Correlation ID: $CORRELATION_ID"
 
 # Step 2: Trigger workflow that produces artifacts
-# Replace with your workflow file and any required inputs
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 echo "$TRIGGER_RESULT" | jq .
@@ -142,7 +139,7 @@ sleep 5
 # Step 4: Get run_id from correlation
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 
 if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
@@ -222,14 +219,13 @@ No artifacts found for run 9876543210
 # Step 1-5: Same as Sequence 1 (trigger workflow, get run_id, wait for completion)
 CORRELATION_ID=$(uuidgen)
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 sleep 5
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
@@ -324,8 +320,7 @@ Deleting artifact 123456...
 CORRELATION_ID=$(uuidgen)
 echo "Correlation ID: $CORRELATION_ID"
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 sleep 5
@@ -333,13 +328,13 @@ sleep 5
 # Step 4: Store metadata (for correlation lookup)
 scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --store-dir runs
 
 # Step 5: Wait for completion using stored metadata
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
