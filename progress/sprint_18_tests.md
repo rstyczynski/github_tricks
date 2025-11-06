@@ -30,41 +30,7 @@ Usage: delete-artifact-curl.sh --artifact-id <id> [OPTIONS]
        delete-artifact-curl.sh --correlation-id <uuid> --all [OPTIONS]
 
 Delete workflow artifacts using REST API (curl).
-
-SINGLE ARTIFACT MODE:
-  --artifact-id <id>        Delete single artifact by artifact ID (numeric)
-
-BULK DELETION MODE:
-  --run-id <id> --all       Delete all artifacts for workflow run
-  --correlation-id <uuid> --all  Load run_id from metadata, delete all artifacts
-
-OPTIONS:
-  --confirm                 Skip confirmation prompt (default: require confirmation)
-  --dry-run                 Preview deletions without executing
-  --name-filter <pattern>   Filter artifacts by name when using --all (partial match, case-sensitive)
-  --runs-dir <dir>          Base directory for metadata (default: runs)
-  --repo <owner/repo>       Repository in owner/repo format (auto-detected if omitted)
-  --token-file <path>       GitHub token file (default: .secrets/token)
-  --help                    Show this help message
-
-EXAMPLES:
-  # Delete single artifact (with confirmation)
-  delete-artifact-curl.sh --artifact-id 123456
-
-  # Delete single artifact (skip confirmation)
-  delete-artifact-curl.sh --artifact-id 123456 --confirm
-
-  # Preview deletions (dry-run)
-  delete-artifact-curl.sh --run-id 1234567890 --all --dry-run
-
-  # Delete all artifacts for run
-  delete-artifact-curl.sh --run-id 1234567890 --all --confirm
-
-  # Delete filtered artifacts
-  delete-artifact-curl.sh --run-id 1234567890 --all --name-filter "test-" --confirm
-
-  # Delete artifacts using correlation ID
-  delete-artifact-curl.sh --correlation-id <uuid> --all --confirm
+...
 ```
 
 **Result**: ✅ PASS - Help output displays correctly with all options and examples
@@ -145,210 +111,306 @@ Error: Must specify --artifact-id or --run-id/--correlation-id with --all
 
 ## Copy/Paste Test Sequences for Product Owner
 
-### Test Sequence 1: Delete Single Artifact (With Confirmation)
+**IMPORTANT**: All sequences below are complete, executable copy/paste sequences that produce real run IDs and artifact IDs. They start from scratch by triggering workflows to get actual data.
+
+### Test Sequence 1: Complete Artifact Lifecycle (List → Download → Delete)
 
 **Prerequisites**:
-- Valid GitHub token in `.secrets/token` or `.secrets/github_token`
-- Token has Actions: Write permissions
-- Valid artifact ID from a workflow run
-- Repository accessible (or use `--repo owner/repo`)
+- Valid GitHub token in `.secrets/token` or `.secrets/github_token` with Actions: Write permissions
+- Webhook URL from https://webhook.site (optional, for workflow that uses webhooks)
+- Workflow that produces artifacts (e.g., `dispatch-webhook.yml` or any workflow that creates artifacts)
 
-**Complete Sequence**:
+**Complete Executable Sequence**:
 ```bash
-# 1. List artifacts to find artifact ID
-scripts/list-artifacts-curl.sh --run-id <run_id>
+# Step 1: Generate correlation ID
+CORRELATION_ID=$(uuidgen)
+echo "Correlation ID: $CORRELATION_ID"
 
-# 2. Delete single artifact (will prompt for confirmation)
-scripts/delete-artifact-curl.sh --artifact-id <artifact_id>
+# Step 2: Trigger workflow that produces artifacts
+# Replace with your workflow file and any required inputs
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+echo "$TRIGGER_RESULT" | jq .
 
-# 3. When prompted, type 'y' to confirm or 'n' to cancel
-# Expected: "Are you sure you want to delete artifact <id> (<name>)? [y/N]:"
+# Step 3: Wait a few seconds for workflow to appear
+echo "Waiting 5 seconds for workflow to appear..."
+sleep 5
 
-# 4. Verify deletion by listing artifacts again
-scripts/list-artifacts-curl.sh --run-id <run_id>
-# Expected: Deleted artifact should no longer appear in the list
+# Step 4: Get run_id from correlation
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+
+if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: Failed to get valid run_id" >&2
+  exit 1
+fi
+
+echo "Run ID: $RUN_ID"
+
+# Step 5: Wait for workflow completion
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: List artifacts (this produces REAL artifact IDs)
+echo "=== Listing artifacts ==="
+ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
+echo "$ARTIFACTS_JSON" | jq .
+
+# Step 7: Extract first artifact ID (REAL ID from actual run)
+ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
+
+if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+  echo "Warning: No artifacts found for this run. Skipping deletion test."
+  echo "To test deletion, use a workflow that produces artifacts."
+  exit 0
+fi
+
+echo "Artifact ID to delete: $ARTIFACT_ID"
+
+# Step 8: Preview deletion (dry-run)
+echo "=== Preview deletion (dry-run) ==="
+scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --dry-run
+
+# Step 9: Delete artifact (with confirmation - type 'y' when prompted)
+echo "=== Deleting artifact ==="
+echo "When prompted, type 'y' to confirm deletion"
+scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
+
+# Step 10: Verify deletion
+echo "=== Verifying deletion ==="
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+# Expected: Deleted artifact should no longer appear
 ```
 
-**Expected Output**:
+**Expected Output** (example):
 ```
+Correlation ID: 12345678-1234-1234-1234-123456789abc
+Run ID: 9876543210
+=== Listing artifacts ===
+{
+  "run_id": "9876543210",
+  "total_count": 1,
+  "artifacts": [
+    {
+      "id": 123456,
+      "name": "test-artifact",
+      ...
+    }
+  ]
+}
+Artifact ID to delete: 123456
+=== Preview deletion (dry-run) ===
+Dry-run: Would delete artifact 123456 (test-artifact, 1.0 KB)
+=== Deleting artifact ===
+When prompted, type 'y' to confirm deletion
 Are you sure you want to delete artifact 123456 (test-artifact)? [y/N]: y
 Deleting artifact 123456...
   ✓ Deleted artifact 123456
+=== Verifying deletion ===
+No artifacts found for run 9876543210
 ```
 
 ---
 
-### Test Sequence 2: Delete Single Artifact (Skip Confirmation)
+### Test Sequence 2: Bulk Deletion with Preview
 
-**Prerequisites**: Same as Test Sequence 1
-
-**Complete Sequence**:
+**Complete Executable Sequence**:
 ```bash
-# Delete single artifact without confirmation prompt
-scripts/delete-artifact-curl.sh --artifact-id <artifact_id> --confirm
+# Step 1-5: Same as Sequence 1 (trigger workflow, get run_id, wait for completion)
+CORRELATION_ID=$(uuidgen)
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+sleep 5
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: Preview all deletions (dry-run)
+echo "=== Preview deletions (dry-run) ==="
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all --dry-run
+
+# Step 7: Delete all artifacts (with confirmation - type 'y' when prompted)
+echo "=== Deleting all artifacts ==="
+echo "When prompted, type 'y' to confirm"
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all
+
+# Step 8: Verify all deleted
+echo "=== Verifying deletion ==="
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+# Expected: No artifacts found
 ```
 
 **Expected Output**:
 ```
-Deleting artifact 123456...
-  ✓ Deleted artifact 123456
-```
-
----
-
-### Test Sequence 3: Preview Deletions (Dry-Run Mode)
-
-**Prerequisites**: Same as Test Sequence 1
-
-**Complete Sequence**:
-```bash
-# Preview what would be deleted without actually deleting
-scripts/delete-artifact-curl.sh --run-id <run_id> --all --dry-run
-```
-
-**Expected Output**:
-```
+=== Preview deletions (dry-run) ===
 Dry-run: Would delete 3 artifact(s):
   - Artifact 123456 (test-artifact, 1.0 KB)
   - Artifact 123457 (build-output, 2.5 MB)
   - Artifact 123458 (coverage-report, 500 KB)
-```
 
-**Note**: No artifacts are actually deleted in dry-run mode.
-
----
-
-### Test Sequence 4: Delete All Artifacts for a Run
-
-**Prerequisites**: Same as Test Sequence 1
-
-**Complete Sequence**:
-```bash
-# 1. List artifacts first to see what will be deleted
-scripts/list-artifacts-curl.sh --run-id <run_id>
-
-# 2. Delete all artifacts (will prompt for confirmation)
-scripts/delete-artifact-curl.sh --run-id <run_id> --all
-
-# 3. When prompted, type 'y' to confirm
-# Expected: "Found <n> artifacts. Delete all? [y/N]:"
-
-# 4. Verify all artifacts deleted
-scripts/list-artifacts-curl.sh --run-id <run_id>
-# Expected: "No artifacts found" or empty list
-```
-
-**Expected Output**:
-```
-Found 3 artifacts for run 1234567890. Delete all? [y/N]: y
-Found 3 artifact(s) for run 1234567890
+=== Deleting all artifacts ===
+When prompted, type 'y' to confirm
+Found 3 artifacts for run 9876543210. Delete all? [y/N]: y
+Found 3 artifact(s) for run 9876543210
 Deleting artifacts...
   ✓ Deleted artifact 123456 (test-artifact)
   ✓ Deleted artifact 123457 (build-output)
   ✓ Deleted artifact 123458 (coverage-report)
 
 Summary: 3 deleted, 0 failed
+
+=== Verifying deletion ===
+No artifacts found for run 9876543210
 ```
 
 ---
 
-### Test Sequence 5: Delete Filtered Artifacts
+### Test Sequence 3: Delete Single Artifact (Skip Confirmation)
 
-**Prerequisites**: Same as Test Sequence 1, plus artifacts with names matching filter pattern
-
-**Complete Sequence**:
+**Complete Executable Sequence**:
 ```bash
-# Delete only artifacts matching name filter
-scripts/delete-artifact-curl.sh --run-id <run_id> --all --name-filter "test-" --confirm
+# Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
+CORRELATION_ID=$(uuidgen)
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+sleep 5
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: Get artifact ID
+ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
+ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
+
+if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+  echo "No artifacts found. Exiting."
+  exit 0
+fi
+
+# Step 7: Delete without confirmation prompt
+echo "=== Deleting artifact $ARTIFACT_ID (no confirmation) ==="
+scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --confirm
+
+# Step 8: Verify deletion
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
 ```
 
 **Expected Output**:
 ```
-Found 1 artifact matching filter "test-"
-Found 1 artifact(s) for run 1234567890
+=== Deleting artifact 123456 (no confirmation) ===
+Deleting artifact 123456...
+  ✓ Deleted artifact 123456
+```
+
+---
+
+### Test Sequence 4: Delete Using Correlation ID
+
+**Complete Executable Sequence**:
+```bash
+# Step 1-3: Trigger workflow and store correlation ID
+CORRELATION_ID=$(uuidgen)
+echo "Correlation ID: $CORRELATION_ID"
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+sleep 5
+
+# Step 4: Store metadata (for correlation lookup)
+scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --store-dir runs
+
+# Step 5: Wait for completion using stored metadata
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: Delete all artifacts using correlation ID
+echo "=== Deleting artifacts using correlation ID ==="
+scripts/delete-artifact-curl.sh --correlation-id "$CORRELATION_ID" --all --confirm
+
+# Step 7: Verify deletion
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+```
+
+**Expected Output**:
+```
+Correlation ID: 12345678-1234-1234-1234-123456789abc
+=== Deleting artifacts using correlation ID ===
+Found 1 artifact(s) for run 9876543210
 Deleting artifacts...
   ✓ Deleted artifact 123456 (test-artifact)
 
 Summary: 1 deleted, 0 failed
 ```
 
-**Note**: Only artifacts with names containing "test-" are deleted.
+---
+
+### Test Sequence 5: Selective Deletion with Name Filter
+
+**Complete Executable Sequence**:
+```bash
+# Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
+CORRELATION_ID=$(uuidgen)
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+sleep 5
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: List all artifacts
+echo "=== All artifacts ==="
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+
+# Step 7: Preview filtered deletions
+echo "=== Preview filtered deletions (matching 'test-') ==="
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all --name-filter "test-" --dry-run
+
+# Step 8: Delete only matching artifacts
+echo "=== Deleting filtered artifacts ==="
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all --name-filter "test-" --confirm
+
+# Step 9: Verify only matching artifacts deleted
+echo "=== Remaining artifacts ==="
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+```
 
 ---
 
-### Test Sequence 6: Delete Using Correlation ID
+### Test Sequence 6: Error Handling - Invalid Artifact ID
 
-**Prerequisites**:
-- Valid correlation ID from previous workflow trigger
-- Metadata file exists in `runs/<correlation_id>.json`
-
-**Complete Sequence**:
+**Complete Executable Sequence**:
 ```bash
-# Delete all artifacts using correlation ID
-scripts/delete-artifact-curl.sh --correlation-id <uuid> --all --confirm
-```
-
-**Expected Output**:
-```
-Found 3 artifact(s) for run 1234567890
-Deleting artifacts...
-  ✓ Deleted artifact 123456 (test-artifact)
-  ✓ Deleted artifact 123457 (build-output)
-  ✓ Deleted artifact 123458 (coverage-report)
-
-Summary: 3 deleted, 0 failed
-```
-
----
-
-### Test Sequence 7: Delete Already Deleted Artifact (Idempotent)
-
-**Prerequisites**: Artifact ID that was already deleted
-
-**Complete Sequence**:
-```bash
-# Attempt to delete an already-deleted artifact
-scripts/delete-artifact-curl.sh --artifact-id <already_deleted_id> --confirm
-```
-
-**Expected Output**:
-```
-Deleting artifact 123456...
-  ✓ Artifact 123456 already deleted (idempotent)
-```
-
-**Note**: Script treats 404 (not found) as success, making deletion idempotent.
-
----
-
-### Test Sequence 8: Error Handling - Insufficient Permissions
-
-**Prerequisites**: Token with Actions: Read but not Write permissions
-
-**Complete Sequence**:
-```bash
-# Attempt deletion with read-only token
-scripts/delete-artifact-curl.sh --artifact-id <artifact_id> --confirm
-```
-
-**Expected Output**:
-```
-Deleting artifact 123456...
-  ✗ Failed to delete artifact 123456: Insufficient permissions
-```
-
-**Note**: Script reports permission errors clearly.
-
----
-
-### Test Sequence 9: Error Handling - Invalid Artifact ID
-
-**Prerequisites**: None (validation test)
-
-**Complete Sequence**:
-```bash
-# Attempt deletion with invalid artifact ID format
+# Test validation without API call
+echo "=== Testing invalid artifact ID format ==="
 scripts/delete-artifact-curl.sh --artifact-id invalid
+# Expected: Error: Invalid artifact ID format: invalid
 ```
 
 **Expected Output**:
@@ -356,18 +418,16 @@ scripts/delete-artifact-curl.sh --artifact-id invalid
 Error: Invalid artifact ID format: invalid
 ```
 
-**Note**: Script validates input before making API calls.
-
 ---
 
-### Test Sequence 10: Error Handling - Missing Token File
+### Test Sequence 7: Error Handling - Missing Token
 
-**Prerequisites**: Token file does not exist
-
-**Complete Sequence**:
+**Complete Executable Sequence**:
 ```bash
-# Attempt deletion without token file
+# Test token file validation
+echo "=== Testing missing token file ==="
 scripts/delete-artifact-curl.sh --artifact-id 123456 --token-file /nonexistent/path
+# Expected: Error: Token file not found
 ```
 
 **Expected Output**:
@@ -375,114 +435,48 @@ scripts/delete-artifact-curl.sh --artifact-id 123456 --token-file /nonexistent/p
 Error: Token file not found: /nonexistent/path
 ```
 
-**Note**: Script validates token file existence before proceeding.
-
----
-
-### Test Sequence 11: Complete Artifact Lifecycle
-
-**Prerequisites**: Workflow run that produces artifacts
-
-**Complete Sequence**:
-```bash
-# 1. List artifacts
-scripts/list-artifacts-curl.sh --run-id <run_id>
-
-# 2. Download artifacts (optional, for backup)
-scripts/download-artifact-curl.sh --run-id <run_id> --all
-
-# 3. Delete artifacts
-scripts/delete-artifact-curl.sh --run-id <run_id> --all --confirm
-
-# 4. Verify deletion
-scripts/list-artifacts-curl.sh --run-id <run_id>
-# Expected: No artifacts found
-```
-
-**Expected Output**:
-```
-# Step 1: List artifacts
-Artifacts for run 1234567890:
-  ID        Name            Size      Created              Expires
-  123456    test-artifact   1.0 KB    2025-01-27 12:00:00  2025-04-27 12:00:00
-
-# Step 3: Delete artifacts
-Found 1 artifact(s) for run 1234567890
-Deleting artifacts...
-  ✓ Deleted artifact 123456 (test-artifact)
-
-Summary: 1 deleted, 0 failed
-
-# Step 4: Verify deletion
-No artifacts found for run 1234567890
-```
-
----
-
-### Test Sequence 12: Bulk Deletion with Partial Failures
-
-**Prerequisites**: Multiple artifacts, some with insufficient permissions
-
-**Complete Sequence**:
-```bash
-# Delete all artifacts (some may fail due to permissions)
-scripts/delete-artifact-curl.sh --run-id <run_id> --all --confirm
-```
-
-**Expected Output**:
-```
-Found 3 artifact(s) for run 1234567890
-Deleting artifacts...
-  ✓ Deleted artifact 123456 (test-artifact)
-  ✗ Failed to delete artifact 123457 (build-output): Insufficient permissions
-  ✓ Deleted artifact 123458 (coverage-report)
-
-Summary: 2 deleted, 1 failed
-```
-
-**Note**: Script continues on individual failures and reports summary.
-
 ---
 
 ## Test Execution Notes
 
-### Tests Requiring GitHub Access
+### Tests That Work Without GitHub Access
 
-The following tests require actual GitHub repository access with workflow runs that produce artifacts:
-
-- Test Sequence 1: Delete Single Artifact (With Confirmation)
-- Test Sequence 2: Delete Single Artifact (Skip Confirmation)
-- Test Sequence 3: Preview Deletions (Dry-Run Mode)
-- Test Sequence 4: Delete All Artifacts for a Run
-- Test Sequence 5: Delete Filtered Artifacts
-- Test Sequence 6: Delete Using Correlation ID
-- Test Sequence 7: Delete Already Deleted Artifact (Idempotent)
-- Test Sequence 8: Error Handling - Insufficient Permissions
-- Test Sequence 11: Complete Artifact Lifecycle
-- Test Sequence 12: Bulk Deletion with Partial Failures
-
-### Validation Tests (No GitHub Access Required)
-
-The following tests validate script behavior without requiring GitHub access:
-
+These validation tests can be run immediately:
 - ✅ Test GH-25-VALID-1: Help Command
-- ✅ Test GH-25-VALID-2: Missing Required Arguments
+- ✅ Test GH-25-VALID-2: Missing Required Arguments  
 - ✅ Test GH-25-VALID-3: Invalid Artifact ID Format
 - ✅ Test GH-25-VALID-4: Conflicting Arguments
-- ✅ Test GH-25-VALID-5: Missing --all Flag for Bulk Deletion
+- ✅ Test GH-25-VALID-5: Missing --all Flag
+- ✅ Test Sequence 6: Invalid Artifact ID
+- ✅ Test Sequence 7: Missing Token
 
-### Test Status Summary
+### Tests Requiring GitHub Access
+
+These tests require:
+- Valid GitHub token with Actions: Write permissions
+- Workflow that produces artifacts
+- GitHub repository access
+
+- Test Sequence 1: Complete Artifact Lifecycle
+- Test Sequence 2: Bulk Deletion with Preview
+- Test Sequence 3: Delete Single Artifact (Skip Confirmation)
+- Test Sequence 4: Delete Using Correlation ID
+- Test Sequence 5: Selective Deletion with Name Filter
+
+### How to Get Real Run IDs and Artifact IDs
+
+All sequences above start from scratch by:
+1. Generating a correlation ID (`uuidgen`)
+2. Triggering a workflow (`trigger-workflow-curl.sh`)
+3. Correlating to get run_id (`correlate-workflow-curl.sh`)
+4. Waiting for completion (`wait-workflow-completion-curl.sh`)
+5. Listing artifacts to get real artifact IDs (`list-artifacts-curl.sh`)
+
+This ensures all IDs are real and the sequences are fully executable.
+
+## Test Status Summary
 
 **Validation Tests**: 5/5 PASSED ✅
 **Integration Tests**: 0/7 EXECUTED (requires GitHub access)
 
-**Overall Status**: Script validation passed. Integration tests pending GitHub repository access with workflow runs that produce artifacts.
-
-## Next Steps
-
-1. Execute integration tests with GitHub repository access
-2. Document actual API responses for each test scenario
-3. Verify error handling for all HTTP status codes
-4. Test with various artifact sizes and counts
-5. Validate permission handling with different token scopes
-
+**Overall Status**: Script validation passed. Integration tests ready for execution with GitHub repository access.

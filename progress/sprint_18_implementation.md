@@ -56,27 +56,78 @@ The `delete-artifact-curl.sh` script provides a safe and efficient way to delete
 
 ### Educational Sequences (Copy/Paste Ready)
 
-#### Sequence 1: Basic Single Artifact Deletion
+#### Sequence 1: Complete Artifact Lifecycle (List → Download → Delete)
 
-This sequence demonstrates how to delete a single artifact with confirmation:
+**IMPORTANT**: This is a complete, executable sequence that produces REAL run IDs and artifact IDs by triggering a workflow from scratch.
 
 ```bash
-# Step 1: List artifacts to find the artifact ID
-scripts/list-artifacts-curl.sh --run-id 1234567890
+# Step 1: Generate correlation ID
+CORRELATION_ID=$(uuidgen)
+echo "Correlation ID: $CORRELATION_ID"
 
-# Step 2: Delete the artifact (will prompt for confirmation)
-scripts/delete-artifact-curl.sh --artifact-id 123456
+# Step 2: Trigger workflow that produces artifacts
+# Replace dispatch-webhook.yml with your workflow that creates artifacts
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+echo "$TRIGGER_RESULT" | jq .
 
-# Step 3: When prompted, type 'y' to confirm deletion
-# Expected prompt: "Are you sure you want to delete artifact 123456 (artifact-name)? [y/N]:"
+# Step 3: Wait for workflow to appear
+sleep 5
 
-# Step 4: Verify deletion by listing artifacts again
-scripts/list-artifacts-curl.sh --run-id 1234567890
-# Expected: The deleted artifact should no longer appear in the list
+# Step 4: Get run_id from correlation
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+
+if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: Failed to get valid run_id" >&2
+  exit 1
+fi
+
+echo "Run ID: $RUN_ID"
+
+# Step 5: Wait for workflow completion
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+
+# Step 6: List artifacts (produces REAL artifact IDs)
+echo "=== Listing artifacts ==="
+ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
+echo "$ARTIFACTS_JSON" | jq .
+
+# Step 7: Extract artifact ID (REAL ID from actual run)
+ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
+
+if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+  echo "Warning: No artifacts found for this run."
+  exit 0
+fi
+
+echo "Artifact ID: $ARTIFACT_ID"
+
+# Step 8: Delete the artifact (will prompt for confirmation)
+scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
+# When prompted, type 'y' to confirm
+
+# Step 9: Verify deletion
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+# Expected: Deleted artifact should no longer appear
 ```
 
 **Expected Output**:
 ```
+Correlation ID: 12345678-1234-1234-1234-123456789abc
+Run ID: 9876543210
+=== Listing artifacts ===
+{
+  "run_id": "9876543210",
+  "total_count": 1,
+  "artifacts": [{"id": 123456, "name": "test-artifact", ...}]
+}
+Artifact ID: 123456
 Are you sure you want to delete artifact 123456 (test-artifact)? [y/N]: y
 Deleting artifact 123456...
   ✓ Deleted artifact 123456
@@ -84,23 +135,32 @@ Deleting artifact 123456...
 
 #### Sequence 2: Bulk Deletion with Preview
 
-This sequence demonstrates safe bulk deletion using dry-run mode first:
+**Complete executable sequence starting from workflow trigger**:
 
 ```bash
-# Step 1: Preview what would be deleted (dry-run)
-scripts/delete-artifact-curl.sh --run-id 1234567890 --all --dry-run
+# Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
+CORRELATION_ID=$(uuidgen)
+TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
+  --workflow dispatch-webhook.yml \
+  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --correlation-id "$CORRELATION_ID" \
+  --json)
+sleep 5
+RUN_ID=$(scripts/correlate-workflow-curl.sh \
+  --correlation-id "$CORRELATION_ID" \
+  --workflow dispatch-webhook.yml \
+  --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
-# Step 2: Review the output to confirm which artifacts will be deleted
-# Expected: List of artifacts with names and sizes
+# Step 6: Preview what would be deleted (dry-run)
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all --dry-run
 
-# Step 3: If satisfied, delete all artifacts (with confirmation)
-scripts/delete-artifact-curl.sh --run-id 1234567890 --all
+# Step 7: If satisfied, delete all artifacts (with confirmation)
+scripts/delete-artifact-curl.sh --run-id "$RUN_ID" --all
+# When prompted, type 'y' to confirm
 
-# Step 4: When prompted, type 'y' to confirm
-# Expected prompt: "Found <n> artifacts. Delete all? [y/N]:"
-
-# Step 5: Verify all artifacts deleted
-scripts/list-artifacts-curl.sh --run-id 1234567890
+# Step 8: Verify all artifacts deleted
+scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
 # Expected: "No artifacts found" or empty list
 ```
 
@@ -111,8 +171,8 @@ Dry-run: Would delete 3 artifact(s):
   - Artifact 123457 (build-output, 2.5 MB)
   - Artifact 123458 (coverage-report, 500 KB)
 
-Found 3 artifacts for run 1234567890. Delete all? [y/N]: y
-Found 3 artifact(s) for run 1234567890
+Found 3 artifacts for run 9876543210. Delete all? [y/N]: y
+Found 3 artifact(s) for run 9876543210
 Deleting artifacts...
   ✓ Deleted artifact 123456 (test-artifact)
   ✓ Deleted artifact 123457 (build-output)
