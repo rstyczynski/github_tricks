@@ -63,16 +63,16 @@ Status: failed
 
 ## Sprint 13
 
-Status: under_analysis
+Status: under_design
 
 ### GH-17. Create Pull Request
 
-Status: analysed
+Status: designed
 
 ### GH-18. List Pull Requests
 
-Status: analysed
+Status: designed
 
 ### GH-19. Update Pull Request
 
-Status: analysed
+Status: designed
