@@ -125,3 +125,34 @@ Backlog Items:
 * GH-9. Cancel scheduled workflow
 
 GitHub does not provide native scheduling for workflow_dispatch events. External schedulers are not an option in this project.
+
+## Sprint 13
+
+Status: Done
+
+Backlog Items:
+
+* GH-17. Create Pull Request
+* GH-18. List Pull Requests
+* GH-19. Update Pull Request
+
+## Sprint 14
+
+Status: Done
+
+Backlog Items:
+
+* GH-20. Merge Pull Request
+* GH-22. Pull Request Comments
+
+## Sprint 15
+
+Status: Proposed
+
+Backlog Items:
+
+* GH-14. Trigger workflow with REST API
+* GH-15. Workflow correlation with REST API
+* GH-16. Fetch logs with REST API
+
+Validate existing workflow features (GH-2, GH-3, GH-5) using pure REST API with curl instead of `gh` CLI. Follow the pattern established in Sprint 9, using token authentication from `./secrets` directory. All implementations should use curl for API calls and provide comprehensive error handling.

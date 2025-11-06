@@ -57,11 +57,14 @@ Execute series of tests of products "GH-5. Workflow log access after run access"
 
 ### GH-6. Cancel requested workflow
 
-TODO
+Dispatch workflow and cancel it right after dispatching
 
 ### GH-7. Cancel running workflow
 
-TODO
+Dispatch workflow, wait for run_id discovery, and:
+
+* cancel right after getting run_id. Check which status is the workflow in.
+* cancel in running state
 
 ### GH-8. Schedule workflow
 
@@ -83,6 +86,39 @@ Validate working model of a webhook informing about run_id for a dispatched work
 
 Use GitHub API to get workflow job phases with status mimicking `gh run view <run_id>`. Use API or gh utility. Prefer browser based authentication for simplicity. 
 
-### GH-999. Template
+### GH-13. Caller gets data produced by a workflow
 
-TODO
+Caller expects to get data produced by a workflow. It's not about artifacts but simple data structures that may be passed by synchronous interfaces.
+
+### GH-14. Trigger workflow with REST API
+
+Validate GH-2 (Trigger GitHub workflow) using pure REST API with curl instead of `gh` CLI. Use GitHub's `POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches` endpoint. The implementation should handle authentication with token from `./secrets` directory, support workflow inputs, and provide proper error handling for common scenarios such as invalid workflow IDs or authentication failures.
+
+### GH-15. Workflow correlation with REST API
+
+Validate GH-3 (Workflow correlation) using pure REST API with curl. Use `GET /repos/{owner}/{repo}/actions/runs` with filtering to retrieve run_id after workflow dispatch. The implementation should support UUID-based correlation, handle pagination using Link headers, filter by workflow, branch, actor, and status, and provide proper error handling. Use token authentication from `./secrets` directory.
+
+### GH-16. Fetch logs with REST API
+
+Validate GH-5 (Workflow log access after run) using pure REST API endpoints. Use `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs` to retrieve workflow execution logs. The implementation should handle log streaming and aggregation, support multiple jobs per workflow run, handle authentication with token from `./secrets` directory, and provide proper error handling for scenarios such as logs not yet available or invalid job IDs.
+
+### GH-17. Create Pull Request
+
+Create a pull request from a feature branch to main branch using REST API. This feature enables programmatic PR creation with full control over PR metadata including title, body, reviewers, labels, and issue linking. The implementation should handle authentication, validate branch existence, and provide proper error handling for common scenarios such as duplicate PRs or invalid branch references. API endpoint: `POST /repos/{owner}/{repo}/pulls`.
+
+### GH-18. List Pull Requests
+
+List pull requests with various filters including state, head branch, base branch, sort order, and direction. This feature supports querying PRs by their current state (open, closed, or all), filtering by source or target branches, and pagination for repositories with many pull requests. The implementation should handle pagination using Link headers and provide a clean interface for filtering and sorting results. API endpoint: `GET /repos/{owner}/{repo}/pulls`.
+
+### GH-19. Update Pull Request
+
+Update pull request properties including title, body, state, and base branch. This feature allows modifying PR metadata after creation, changing the target branch, and closing or reopening pull requests programmatically. The implementation should validate changes, handle merge conflicts when changing base branch, and provide clear error messages for invalid operations. API endpoint: `PATCH /repos/{owner}/{repo}/pulls/{pull_number}`.
+
+### GH-20. Merge Pull Request
+
+Merge pull request with different merge strategies including merge commit, squash and merge, and rebase and merge. This feature requires checking the mergeable state before attempting merge and handling various merge scenarios such as conflicts, required status checks, and branch protection rules. The implementation should validate merge eligibility, support all three merge strategies, and provide detailed feedback about merge results or failures. API endpoint: `PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge`.
+
+### GH-22. Pull Request Comments
+
+Add, update, and delete comments on pull requests including both general PR comments and inline code review comments. This feature enables programmatic code review workflows, allowing automated or scripted review processes to interact with PR discussions. The implementation should support adding comments at specific line positions for code reviews, updating existing comments, deleting comments, and reacting to comments with emojis. API endpoint: `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments`.
+
