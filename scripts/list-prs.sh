@@ -148,17 +148,17 @@ fetch_prs() {
       current_query+="page=$page&per_page=$per_page"
     fi
 
-    local response headers http_code
-    response=$(curl -s -w "\n%{http_code}" -D - \
+    local response headers http_code response_body
+    response=$(curl -s -w "\n%{http_code}" -D /tmp/curl_headers_$$ \
       -H "Authorization: Bearer $token" \
       -H "Accept: application/vnd.github+json" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
       "https://api.github.com/repos/$owner/$repo/pulls?$current_query" 2>/dev/null)
 
     http_code=$(echo "$response" | tail -n1)
-    headers=$(echo "$response" | grep -i "^link:" || echo "")
-    local response_body
-    response_body=$(echo "$response" | sed '$d' | sed '/^link:/Id' | sed '/^HTTP\//d')
+    headers=$(grep -i "^link:" /tmp/curl_headers_$$ 2>/dev/null || echo "")
+    response_body=$(echo "$response" | sed '$d')
+    rm -f /tmp/curl_headers_$$
 
     if [[ "$http_code" != "200" ]]; then
       handle_api_error "$http_code" "$response_body"
