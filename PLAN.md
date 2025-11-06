@@ -159,7 +159,7 @@ Validate existing workflow features (GH-2, GH-3, GH-5) using pure REST API with 
 
 ## Sprint 16
 
-Status: Progress
+Status: Done
 
 Backlog Items:
 
