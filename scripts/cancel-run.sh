@@ -268,10 +268,9 @@ main() {
   run_id=$(resolve_run_id_input)
   
   # Get status before cancellation
-  local status_before url
-  if ! read -r status_before _ url < <(get_run_status "$run_id"); then
-    exit 1
-  fi
+  local status_before url status_output
+  status_output=$(get_run_status "$run_id") || exit 1
+  read -r status_before _ url <<< "$status_output"
   
   # Cancel the run
   if ! cancel_run_gh "$run_id" "$FORCE"; then
