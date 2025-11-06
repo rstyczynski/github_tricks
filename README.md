@@ -12,9 +12,10 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 - **Post-Run Log Retrieval**: Fetch and aggregate workflow logs after completion
   - `gh` CLI version: `fetch-run-logs.sh`
   - REST API version: `fetch-logs-curl.sh` (Sprint 15)
-- **Artifact Management**: List and download workflow artifacts with filtering and pagination
+- **Artifact Management**: Complete lifecycle management for workflow artifacts (list, download, delete)
   - List artifacts: `list-artifacts-curl.sh` (Sprint 16)
   - Download artifacts: `download-artifact-curl.sh` (Sprint 17)
+  - Delete artifacts: `delete-artifact-curl.sh` (Sprint 18)
 - **Workflow Status Monitoring**: Wait for workflow completion with polling
   - Wait for completion: `wait-workflow-completion-curl.sh` (Sprint 17)
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
@@ -76,6 +77,21 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 # Download filtered artifacts using correlation ID
 ./scripts/download-artifact-curl.sh --correlation-id <uuid> --all --name-filter "build-" --extract
 
+# Delete single artifact (with confirmation)
+./scripts/delete-artifact-curl.sh --artifact-id <artifact_id>
+
+# Delete single artifact (skip confirmation)
+./scripts/delete-artifact-curl.sh --artifact-id <artifact_id> --confirm
+
+# Preview deletions (dry-run)
+./scripts/delete-artifact-curl.sh --run-id <run_id> --all --dry-run
+
+# Delete all artifacts for a run
+./scripts/delete-artifact-curl.sh --run-id <run_id> --all --confirm
+
+# Delete filtered artifacts
+./scripts/delete-artifact-curl.sh --run-id <run_id> --all --name-filter "test-" --confirm
+
 # Wait for workflow completion
 ./scripts/wait-workflow-completion-curl.sh --run-id <run_id>
 
@@ -125,6 +141,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 - `fetch-logs-curl.sh` - Fetch logs using REST API (curl, Sprint 15)
 - `list-artifacts-curl.sh` - List workflow artifacts with filtering and pagination (curl, Sprint 16)
 - `download-artifact-curl.sh` - Download workflow artifacts with optional extraction (curl, Sprint 17)
+- `delete-artifact-curl.sh` - Delete workflow artifacts with safety features (curl, Sprint 18)
 - `wait-workflow-completion-curl.sh` - Wait for workflow completion with polling (curl, Sprint 17)
 - `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
 - `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
@@ -215,6 +232,7 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 **Current Status:**
 
+- Sprint 18: ✅ Done (Artifact Deletion - GH-25)
 - Sprint 17: ✅ Done (Artifact Download - GH-24)
 - Sprint 16: ✅ Done (Artifact Listing - GH-23)
 - Sprint 15: ✅ Done (REST API Validation - GH-14, GH-15, GH-16)
