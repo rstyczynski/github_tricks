@@ -169,7 +169,7 @@ Extend workflow management capabilities with artifact listing operations. Implem
 
 ## Sprint 17
 
-Status: Proposed
+Status: Done
 
 Backlog Items:
 
@@ -179,7 +179,7 @@ Extend workflow management capabilities with artifact download operations. Imple
 
 ## Sprint 18
 
-Status: Proposed
+Status: Planned
 
 Backlog Items:
 

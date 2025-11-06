@@ -68,8 +68,7 @@ echo "Correlation ID: $CORRELATION_ID"
 # Step 2: Trigger workflow that produces artifacts
 # Replace dispatch-webhook.yml with your workflow that creates artifacts
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 echo "$TRIGGER_RESULT" | jq .
@@ -80,15 +79,15 @@ sleep 5
 # Step 4: Get run_id from correlation
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 
 if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
   echo "Error: Failed to get valid run_id" >&2
   echo "Please check workflow trigger and correlation"
 else
-
-echo "Run ID: $RUN_ID"
+  echo "Run ID: $RUN_ID"
+fi
 
 # Step 5: Wait for workflow completion
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
@@ -114,7 +113,7 @@ else
   scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
   # Expected: Deleted artifact should no longer appear
 fi
-fi
+
 ```
 
 **Expected Output**:
@@ -141,14 +140,13 @@ Deleting artifact 123456...
 # Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
 CORRELATION_ID=$(uuidgen)
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 sleep 5
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml  \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
