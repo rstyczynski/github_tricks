@@ -224,11 +224,20 @@ echo "$TRIGGER_RESULT" | jq -r '.correlation_id'
 sleep 5
 
 # Get run_id using correlation
-RUN_ID=$(scripts/correlate-workflow-curl.sh \
+CORRELATE_RESULT=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
   --workflow artifact-producer.yml \
   --token-file .secrets/token \
   --json-only)
+
+RUN_ID=$(echo "$CORRELATE_RESULT" | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
+
+if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: Failed to get valid run_id. Correlation may have failed." >&2
+  echo "Correlation result: $CORRELATE_RESULT" >&2
+  echo "Extracted RUN_ID: '$RUN_ID'" >&2
+  # Note: In a standalone script, you would use 'exit 1' here
+fi
 
 echo "Run ID: $RUN_ID"
 ```
@@ -236,39 +245,14 @@ echo "Run ID: $RUN_ID"
 **Step 4: Wait for workflow completion**
 
 ```bash
-# Poll until workflow completes (max 5 minutes)
-# Using REST API directly to check run status
-MAX_WAIT=300
-ELAPSED=0
-INTERVAL=10
+# Wait for workflow to complete (default: max 5 minutes, poll every 10 seconds)
+scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID" --token-file .secrets/token
 
-# Get repository from git config
-OWNER_REPO=$(git config --get remote.origin.url | sed -E 's|.*github.com[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|')
-TOKEN=$(cat .secrets/token)
+# With custom timeout and interval:
+# scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID" --max-wait 600 --interval 5 --token-file .secrets/token
 
-while [ $ELAPSED -lt $MAX_WAIT ]; do
-  # Check run status via REST API
-  RUN_STATUS=$(curl -sS \
-    -H "Authorization: Bearer $TOKEN" \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "https://api.github.com/repos/$OWNER_REPO/actions/runs/$RUN_ID" | \
-    jq -r '.status // "unknown"')
-  
-  if [ "$RUN_STATUS" = "completed" ]; then
-    echo "Workflow completed!"
-    break
-  fi
-  
-  echo "Waiting for completion... (status: $RUN_STATUS, elapsed: ${ELAPSED}s)"
-  sleep $INTERVAL
-  ELAPSED=$((ELAPSED + INTERVAL))
-done
-
-if [ "$RUN_STATUS" != "completed" ]; then
-  echo "Error: Workflow did not complete within ${MAX_WAIT} seconds"
-  exit 1
-fi
+# Quiet mode (suppress progress output):
+# scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID" --quiet --token-file .secrets/token
 ```
 
 **Step 5: List artifacts to get artifact ID**
@@ -314,100 +298,16 @@ cat artifacts/test-artifact/metadata.json | jq .
 
 **Complete Copy-Paste Script**
 
-Here's the complete script you can copy-paste and execute:
+For a fully executable standalone script, use:
 
 ```bash
-#!/bin/bash
-set -e
+scripts/download-artifact-example.sh
+```
 
-# Step 1: Generate correlation ID
-CORRELATION_ID=$(uuidgen)
-echo "=== Step 1: Correlation ID ==="
-echo "Correlation ID: $CORRELATION_ID"
-echo ""
+Or view the script source:
 
-# Step 2: Trigger workflow
-echo "=== Step 2: Triggering workflow ==="
-TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow artifact-producer.yml \
-  --input correlation_id="$CORRELATION_ID" \
-  --token-file .secrets/token \
-  --json)
-echo "$TRIGGER_RESULT" | jq .
-echo ""
-
-# Step 3: Wait and correlate
-echo "=== Step 3: Waiting for workflow to appear (5 seconds) ==="
-sleep 5
-
-echo "=== Step 4: Getting run_id ==="
-RUN_ID=$(scripts/correlate-workflow-curl.sh \
-  --correlation-id "$CORRELATION_ID" \
-  --workflow artifact-producer.yml \
-  --token-file .secrets/token \
-  --json-only)
-echo "Run ID: $RUN_ID"
-echo ""
-
-# Step 5: Wait for completion
-echo "=== Step 5: Waiting for workflow completion ==="
-MAX_WAIT=300
-ELAPSED=0
-INTERVAL=10
-
-# Get repository and token for status check
-OWNER_REPO=$(git config --get remote.origin.url | sed -E 's|.*github.com[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|')
-TOKEN=$(cat .secrets/token)
-
-while [ $ELAPSED -lt $MAX_WAIT ]; do
-  RUN_STATUS=$(curl -sS \
-    -H "Authorization: Bearer $TOKEN" \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "https://api.github.com/repos/$OWNER_REPO/actions/runs/$RUN_ID" 2>/dev/null | \
-    jq -r '.status // "unknown"')
-  
-  if [ "$RUN_STATUS" = "completed" ]; then
-    echo "✓ Workflow completed!"
-    break
-  fi
-  
-  printf "\rWaiting... (status: %s, elapsed: %ds)" "$RUN_STATUS" "$ELAPSED"
-  sleep $INTERVAL
-  ELAPSED=$((ELAPSED + INTERVAL))
-done
-echo ""
-
-if [ "$RUN_STATUS" != "completed" ]; then
-  echo "Error: Workflow did not complete within ${MAX_WAIT} seconds"
-  exit 1
-fi
-
-# Step 6: List artifacts
-echo "=== Step 6: Listing artifacts ==="
-ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --token-file .secrets/token --json)
-echo "$ARTIFACTS_JSON" | jq -r '.artifacts[] | "  \(.id) - \(.name) (\(.size_in_bytes) bytes)"'
-echo ""
-
-# Step 7: Get artifact ID
-ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id')
-echo "Selected artifact ID: $ARTIFACT_ID"
-echo ""
-
-# Step 8: Download artifact
-echo "=== Step 7: Downloading artifact ==="
-scripts/download-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --token-file .secrets/token
-echo ""
-
-# Step 9: Verify download
-echo "=== Step 8: Verifying download ==="
-ls -lh artifacts/test-artifact.zip
-echo ""
-echo "Artifact contents:"
-unzip -l artifacts/test-artifact.zip
-echo ""
-echo "✓ Example completed successfully!"
-echo "Downloaded artifact: artifacts/test-artifact.zip"
+```bash
+cat scripts/download-artifact-example.sh
 ```
 
 **Prerequisites:**

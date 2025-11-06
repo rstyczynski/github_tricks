@@ -15,6 +15,8 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 - **Artifact Management**: List and download workflow artifacts with filtering and pagination
   - List artifacts: `list-artifacts-curl.sh` (Sprint 16)
   - Download artifacts: `download-artifact-curl.sh` (Sprint 17)
+- **Workflow Status Monitoring**: Wait for workflow completion with polling
+  - Wait for completion: `wait-workflow-completion-curl.sh` (Sprint 17)
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
 - **Workflow Cancellation**: Cancel workflows in requested or running states
 - **Benchmarking**: Measure timing for correlation and log retrieval
@@ -74,6 +76,12 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 # Download filtered artifacts using correlation ID
 ./scripts/download-artifact-curl.sh --correlation-id <uuid> --all --name-filter "build-" --extract
 
+# Wait for workflow completion
+./scripts/wait-workflow-completion-curl.sh --run-id <run_id>
+
+# Wait for workflow completion with custom timeout
+./scripts/wait-workflow-completion-curl.sh --run-id <run_id> --max-wait 600 --interval 5
+
 # Cancel a running workflow
 ./scripts/cancel-run.sh --run-id <run_id>
 ```
@@ -117,6 +125,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 - `fetch-logs-curl.sh` - Fetch logs using REST API (curl, Sprint 15)
 - `list-artifacts-curl.sh` - List workflow artifacts with filtering and pagination (curl, Sprint 16)
 - `download-artifact-curl.sh` - Download workflow artifacts with optional extraction (curl, Sprint 17)
+- `wait-workflow-completion-curl.sh` - Wait for workflow completion with polling (curl, Sprint 17)
 - `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
 - `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
 - `cancel-run.sh` - Cancel workflows in requested or running states
