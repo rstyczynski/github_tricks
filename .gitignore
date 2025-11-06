@@ -2,6 +2,7 @@
 runs/
 .secrets/
 .claude/
+artifacts/
 
 # Do not ignore test output files
 # tests/*.json
