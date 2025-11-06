@@ -60,3 +60,19 @@ Status: failed
 Status: failed
 
 **Reason**: Depends on GH-8, which cannot be implemented due to GitHub API limitations.
+
+## Sprint 13
+
+Status: under_analysis
+
+### GH-17. Create Pull Request
+
+Status: under_analysis
+
+### GH-18. List Pull Requests
+
+Status: under_analysis
+
+### GH-19. Update Pull Request
+
+Status: under_analysis
