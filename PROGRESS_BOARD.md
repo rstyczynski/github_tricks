@@ -67,12 +67,12 @@ Status: under_analysis
 
 ### GH-17. Create Pull Request
 
-Status: under_analysis
+Status: analysed
 
 ### GH-18. List Pull Requests
 
-Status: under_analysis
+Status: analysed
 
 ### GH-19. Update Pull Request
 
-Status: under_analysis
+Status: analysed
