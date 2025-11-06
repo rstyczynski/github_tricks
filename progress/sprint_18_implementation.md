@@ -41,7 +41,7 @@ Created `scripts/delete-artifact-curl.sh` script that deletes workflow artifacts
 - Requires valid GitHub token with Actions: Write permissions
 - Test scenarios documented in design document (GH-25-1 through GH-25-12)
 
-**Status**: Script implemented and ready for testing. Full testing requires GitHub repository access with workflow runs that produce artifacts.
+**Status**: Script implemented and tested. Validation tests passed. Integration tests require GitHub repository access with workflow runs that produce artifacts.
 
 ## Implementation Approach
 
