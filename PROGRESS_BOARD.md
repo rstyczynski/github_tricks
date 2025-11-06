@@ -61,11 +61,17 @@ Status: failed
 
 **Reason**: Depends on GH-8, which cannot be implemented due to GitHub API limitations.
 
-## Sprint 13
+## Sprint 14
 
-Status: implemented
+Status: under_analysis
 
-**All backlog items implemented and tested successfully!**
+### GH-20. Merge Pull Request
+
+Status: analysed
+
+### GH-22. Pull Request Comments
+
+Status: analysed
 
 ### GH-17. Create Pull Request
 
