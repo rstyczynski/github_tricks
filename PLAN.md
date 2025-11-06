@@ -95,3 +95,33 @@ Backlog Items:
 * GH-12. Use GitHub API to get workflow job phases with status.
 
 Implement GH-12 using API calls with curl. Use token file from ./secrets directory
+
+## Sprint 10
+
+Status: Failed
+
+Backlog Items:
+
+* GH-13. Caller gets data produced by a workflow
+
+Caller uses GitHub REST API to gets data produced by a workflow. The workflow returns simple data structure derived from a parameters passed by a caller.
+
+## Sprint 11
+
+Status: Done
+
+Backlog Items:
+
+* GH-6. Cancel requested workflow
+* GH-7. Cancel running workflow
+
+## Sprint 12
+
+Status: Failed
+
+Backlog Items:
+
+* GH-8. Schedule workflow
+* GH-9. Cancel scheduled workflow
+
+GitHub does not provide native scheduling for workflow_dispatch events. External schedulers are not an option in this project.
