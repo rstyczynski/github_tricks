@@ -101,36 +101,19 @@ echo "$ARTIFACTS_JSON" | jq .
 # Step 7: Extract artifact ID (REAL ID from actual run)
 ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
 
-if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
-  echo "Error: Failed to get valid run_id" >&2
-  echo "Please check workflow trigger and correlation"
+if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+  echo "Warning: No artifacts found for this run."
 else
-  echo "Run ID: $RUN_ID"
+  echo "Artifact ID: $ARTIFACT_ID"
 
-  # Step 5: Wait for workflow completion
-  scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
+  # Step 8: Delete the artifact (will prompt for confirmation)
+  scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
+  # When prompted, type 'y' to confirm
 
-  # Step 6: List artifacts (produces REAL artifact IDs)
-  echo "=== Listing artifacts ==="
-  ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
-  echo "$ARTIFACTS_JSON" | jq .
-
-  # Step 7: Extract artifact ID (REAL ID from actual run)
-  ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
-
-  if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
-    echo "Warning: No artifacts found for this run."
-  else
-    echo "Artifact ID: $ARTIFACT_ID"
-
-    # Step 8: Delete the artifact (will prompt for confirmation)
-    scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID"
-    # When prompted, type 'y' to confirm
-
-    # Step 9: Verify deletion
-    scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
-    # Expected: Deleted artifact should no longer appear
-  fi
+  # Step 9: Verify deletion
+  scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
+  # Expected: Deleted artifact should no longer appear
+fi
 fi
 ```
 
