@@ -65,58 +65,71 @@ Status: failed
 
 Status: implemented
 
-**All backlog items implemented! Static validation passed. Functional testing pending test environment.**
+**All backlog items implemented and tested successfully!**
 
 ### GH-17. Create Pull Request
 
-Status: implemented
+Status: tested
 
 **Implementation**: ✅ Complete (scripts/create-pr.sh)
 **Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
+**Functional Testing**: ✅ PASSED
 
-**Test Attempts**: 1/10
+**Test Attempts**: 2/10
 
 - Attempt 1: Static validation + error handling tests
+- Attempt 2: Functional test - Created PR #2 successfully
 
 **Test Results**:
 - ✅ shellcheck: No issues
 - ✅ --help flag: Works correctly
 - ✅ Error handling: Correct messages for missing required parameters
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
+- ✅ PR creation: Successfully created PR #2 (test-pr-branch → main)
+- ✅ JSON output: Valid JSON with PR details
+- ✅ Human-readable output: Correct format
 
 ### GH-18. List Pull Requests
 
-Status: implemented
+Status: tested
 
 **Implementation**: ✅ Complete (scripts/list-prs.sh)
 **Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
+**Functional Testing**: ✅ PASSED
 
-**Test Attempts**: 1/10
+**Test Attempts**: 2/10
 
 - Attempt 1: Static validation + error handling tests
+- Attempt 2: Bug fix + Functional test - Listed PRs successfully
 
 **Test Results**:
 - ✅ shellcheck: No issues
 - ✅ --help flag: Works correctly
 - ✅ Error handling: Correct messages for missing token file
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
+- ✅ List open PRs: Works correctly (found 0 open PRs)
+- ✅ List all PRs: Works correctly (found 1 closed PR)
+- ✅ JSON output: Valid JSON array
+- ✅ Table output: Correctly formatted table
+- ✅ Filtering: Works with --state parameter
 
 ### GH-19. Update Pull Request
 
-Status: implemented
+Status: tested
 
 **Implementation**: ✅ Complete (scripts/update-pr.sh)
 **Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
+**Functional Testing**: ✅ PASSED
 
-**Test Attempts**: 1/10
+**Test Attempts**: 2/10
 
 - Attempt 1: Static validation + error handling tests
+- Attempt 2: Functional test - Updated PR #2 successfully
 
 **Test Results**:
 - ✅ shellcheck: No issues
 - ✅ --help flag: Works correctly
 - ✅ Error handling: Correct messages for missing update fields
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
+- ✅ Update title: Successfully updated PR #2 title
+- ✅ Update body: Successfully updated PR #2 body
+- ✅ Update state: Successfully closed PR #2
+- ✅ JSON output: Valid JSON with updated PR details
+- ✅ Human-readable output: Correct format
