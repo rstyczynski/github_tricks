@@ -185,6 +185,7 @@ poll_workflow_runs() {
   local owner repo
   IFS='/' read -r owner repo <<< "$owner_repo"
 
+  # First check queued/in_progress runs
   local query="status=queued,in_progress&per_page=30"
   [[ -n "$workflow_id" ]] && query+="&workflow_id=$workflow_id"
   [[ -n "$branch" ]] && query+="&head_branch=$branch"
@@ -198,6 +199,32 @@ poll_workflow_runs() {
 
   http_code=$(echo "$response" | tail -n1)
   local response_body
+  response_body=$(echo "$response" | sed '$d')
+
+  if [[ "$http_code" == "200" ]]; then
+    # Filter by correlation_id in run name
+    local run_id
+    run_id=$(echo "$response_body" | jq -r --arg corr_id "$correlation_id" \
+      '.workflow_runs[]? | select(.name | contains($corr_id)) | .id' | head -n1)
+    
+    if [[ -n "$run_id" ]]; then
+      echo "$run_id"
+      return 0
+    fi
+  fi
+
+  # If not found in queued/in_progress, check completed runs
+  query="status=completed&per_page=30"
+  [[ -n "$workflow_id" ]] && query+="&workflow_id=$workflow_id"
+  [[ -n "$branch" ]] && query+="&head_branch=$branch"
+
+  response=$(curl -sS -w '\n%{http_code}' \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$owner/$repo/actions/runs?$query" 2>/dev/null || printf '\n000')
+
+  http_code=$(echo "$response" | tail -n1)
   response_body=$(echo "$response" | sed '$d')
 
   if [[ "$http_code" != "200" ]]; then
