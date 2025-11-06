@@ -276,14 +276,13 @@ No artifacts found for run 9876543210
 # Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
 CORRELATION_ID=$(uuidgen)
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 sleep 5
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
@@ -366,14 +365,13 @@ Summary: 1 deleted, 0 failed
 # Step 1-5: Trigger workflow and get run_id (same as Sequence 1)
 CORRELATION_ID=$(uuidgen)
 TRIGGER_RESULT=$(scripts/trigger-workflow-curl.sh \
-  --workflow dispatch-webhook.yml \
-  --input webhook_url="${WEBHOOK_URL:-https://webhook.site/your-id}" \
+  --workflow artifact-producer.yml \
   --correlation-id "$CORRELATION_ID" \
   --json)
 sleep 5
 RUN_ID=$(scripts/correlate-workflow-curl.sh \
   --correlation-id "$CORRELATION_ID" \
-  --workflow dispatch-webhook.yml \
+  --workflow artifact-producer.yml \
   --json-only | jq -r '.run_id // empty' | tr -d '\n\r' | xargs)
 scripts/wait-workflow-completion-curl.sh --run-id "$RUN_ID"
 
