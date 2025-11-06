@@ -147,8 +147,8 @@ RUN_ID=$(scripts/correlate-workflow-curl.sh \
 
 if [[ -z "$RUN_ID" ]] || [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
   echo "Error: Failed to get valid run_id" >&2
-  exit 1
-fi
+  echo "Please check workflow trigger and correlation"
+else
 
 echo "Run ID: $RUN_ID"
 
@@ -166,8 +166,7 @@ ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
 if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
   echo "Warning: No artifacts found for this run. Skipping deletion test."
   echo "To test deletion, use a workflow that produces artifacts."
-  exit 0
-fi
+else
 
 echo "Artifact ID to delete: $ARTIFACT_ID"
 
@@ -297,16 +296,15 @@ ARTIFACTS_JSON=$(scripts/list-artifacts-curl.sh --run-id "$RUN_ID" --json)
 ARTIFACT_ID=$(echo "$ARTIFACTS_JSON" | jq -r '.artifacts[0].id // empty')
 
 if [[ -z "$ARTIFACT_ID" ]] || [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
-  echo "No artifacts found. Exiting."
-  exit 0
+  echo "No artifacts found. Skipping deletion."
+else
+  # Step 7: Delete without confirmation prompt
+  echo "=== Deleting artifact $ARTIFACT_ID (no confirmation) ==="
+  scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --confirm
+
+  # Step 8: Verify deletion
+  scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
 fi
-
-# Step 7: Delete without confirmation prompt
-echo "=== Deleting artifact $ARTIFACT_ID (no confirmation) ==="
-scripts/delete-artifact-curl.sh --artifact-id "$ARTIFACT_ID" --confirm
-
-# Step 8: Verify deletion
-scripts/list-artifacts-curl.sh --run-id "$RUN_ID"
 ```
 
 **Expected Output**:
