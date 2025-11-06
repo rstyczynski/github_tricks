@@ -17,5 +17,5 @@ Progress board is a table showing sprint, and backlog items state. It's the only
 | Sprint 15 | implemented | GH-15. Workflow correlation with REST API | implemented |
 | Sprint 15 | implemented | GH-16. Fetch logs with REST API | implemented |
 | Sprint 16 | implemented | GH-23. List workflow artifacts | implemented |
-| Sprint 17 | under_design | GH-24. Download workflow artifacts | under_design |
+| Sprint 17 | implemented | GH-24. Download workflow artifacts | implemented |
 | Sprint 18 | proposed | GH-25. Delete workflow artifacts | proposed |
