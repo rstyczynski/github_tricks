@@ -6,7 +6,7 @@
 
 ## Overview
 
-This inception review documents understanding of the GitHub Workflow Experimentation project, its achievements, limitations, and current state after completing Sprints 0-10.
+This inception review documents understanding of the GitHub Workflow Experimentation project, its achievements, limitations, and current state after completing Sprints 0-10, with Sprint 11 now planned for workflow cancellation features.
 
 ## Project Understanding
 
@@ -165,17 +165,69 @@ The project aims to provide tools and techniques for interacting with GitHub Act
 
 4. **Feedback Channels**: `Proposed changes` and `More information needed` chapters enabled structured dialogue
 
+## Sprint 11 - Planned (Status: Planned)
+
+**Current Active Sprint**: Sprint 11 focuses on workflow cancellation capabilities.
+
+### Backlog Items
+
+**GH-6. Cancel requested workflow**:
+- **Requirement**: Dispatch workflow and cancel it right after dispatching
+- **Approach**: Use `gh run cancel <run_id>` or REST API `POST /repos/:owner/:repo/actions/runs/:run_id/cancel`
+- **Feasibility**: Fully achievable with existing tooling from Sprint 1 (correlation) and Sprint 8/9 (API access patterns)
+- **Test scenario**: Cancel workflow before it starts execution, verify status
+
+**GH-7. Cancel running workflow**:
+- **Requirement**: Dispatch workflow, wait for run_id discovery, then:
+  - Cancel right after getting run_id. Check which status is the workflow in.
+  - Cancel in running state
+- **Approach**: Same API endpoint as GH-6, different timing
+- **Feasibility**: Fully achievable with existing tooling
+- **Test scenarios**: 
+  - Cancel immediately after correlation (likely status: queued)
+  - Cancel during execution (status: in_progress)
+  - Verify status transitions and final conclusion
+
+### Integration Points
+
+**With Sprint 1 (trigger-and-track.sh)**:
+- Reuse correlation mechanism to get run_id
+- Extend or create new script for cancel operation
+
+**With Sprint 8/9 (view-run-jobs.sh)**:
+- Use job status viewer to verify cancellation
+- Monitor status transitions during cancel operation
+
+**Available GitHub CLI Command**:
+- `gh run cancel <run_id>` - Stops running workflow (returns 202 Accepted)
+- Documented in Sprint 5 review as available but unused
+
+**Available REST API Endpoint**:
+- `POST /repos/:owner/:repo/actions/runs/:run_id/cancel` - Cancel workflow run
+- `POST /repos/:owner/:repo/actions/runs/:run_id/force-cancel` - Force cancel (bypasses `always()` conditions)
+- Both documented in Sprint 5 API analysis
+
+### Expected Deliverables
+
+**Scripts**:
+- `scripts/cancel-run.sh` - Cancel workflow by run_id or correlation_id
+- Test wrapper script for validation
+
+**Testing**:
+- Cancel immediately after dispatch (GH-6)
+- Cancel after correlation (GH-7, early timing)
+- Cancel during execution (GH-7, in-progress state)
+- Verify status transitions
+- Document cancellation timing characteristics
+
+**Documentation**:
+- Design document (`progress/sprint_11_design.md`)
+- Implementation notes (`progress/sprint_11_implementation.md`)
+- Usage examples and timing observations
+
 ## Future Considerations
 
-### Remaining Backlog Items
-
-**GH-6**: Cancel requested workflow
-- Approach: Use `gh run cancel <run_id>`
-- Feasibility: Fully achievable with existing tooling
-
-**GH-7**: Cancel running workflow  
-- Approach: Same as GH-6 (API doesn't distinguish requested vs. running)
-- Feasibility: Fully achievable
+### Remaining Backlog Items (Not Yet Planned)
 
 **GH-8**: Schedule workflow
 - Approach: External scheduler (cron) + `gh workflow run`
@@ -237,14 +289,18 @@ The project aims to provide tools and techniques for interacting with GitHub Act
 - All workflows pass `actionlint` validation
 - Cross-platform testing (macOS and Linux)
 
-## No Active Sprint in Progress
+## Sprint Status Overview
 
-**Observation**: According to `PLAN.md`, no sprint currently has status "Progress":
+**Current State**: Sprint 11 is now **Planned** and ready for inception phase.
+
+**Completed Sprints**:
 - Sprints 0-1, 3-4, 8-9: Done
 - Sprint 5: Implemented
+
+**Failed Sprints** (platform limitations documented):
 - Sprints 2, 6-7, 10: Failed
 
-The project has completed its planned work through Sprint 10, documenting both successes and platform-imposed limitations.
+**Next Sprint**: Sprint 11 (GH-6, GH-7) - Workflow cancellation features
 
 ## Questions
 
@@ -271,11 +327,24 @@ The project demonstrates effective agentic programming practices with clear sepa
 
 ## Ready for Next Phase
 
-The inception phase is complete. The project is well-positioned to:
-- Address remaining backlog items (GH-6, GH-7, GH-8, GH-9)
-- Investigate Sprint 10 failure (GH-13)
-- Add enhancements based on operator feedback
-- Serve as reference for similar GitHub automation projects
+The inception phase is complete and updated for Sprint 11.
 
-All documentation reviewed, history understood, and project state confirmed.
+**Sprint 11 Focus**: Workflow cancellation capabilities (GH-6, GH-7)
+- Cancel requested workflow (before execution starts)
+- Cancel running workflow (at different execution stages)
+- Integration with existing correlation and monitoring tools
+
+**Technical Readiness**:
+- ✅ GitHub CLI command available: `gh run cancel <run_id>`
+- ✅ REST API endpoint documented: `POST /repos/:owner/:repo/actions/runs/:run_id/cancel`
+- ✅ Correlation mechanism from Sprint 1 provides run_id
+- ✅ Job status monitoring from Sprints 8-9 enables verification
+- ✅ Established patterns for script structure and testing
+
+**Future Work** (not in Sprint 11):
+- GH-8, GH-9: Workflow scheduling and cancellation
+- GH-13: Workflow output data (requires clarification)
+- Enhancements based on operator feedback
+
+All documentation reviewed, Sprint 11 scope understood, and technical approach validated.
 
