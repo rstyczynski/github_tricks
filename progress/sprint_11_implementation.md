@@ -1,6 +1,8 @@
 # Sprint 11 - Implementation Notes
 
-## Status: Under Construction
+## Status: Implemented ✅
+
+**Both GH-6 and GH-7 successfully tested and verified!**
 
 ### Implementation Progress
 
@@ -252,24 +254,52 @@ scripts/cancel-run.sh --run-id "$run_id" --wait --json
 
 **Status**: Implementation complete, functional testing blocked by missing WEBHOOK_URL
 
-### Functional Testing Status
+### Attempt 2: Bug Fix + Functional Testing ✅
+**Date**: 2025-11-06  
+**Type**: Bug fix + Full functional testing
+**Result**: ✅ ALL TESTS PASSED
 
-**Blocked**: Functional tests cannot run without test environment setup
-**Blocking Issues**:
-1. WEBHOOK_URL not set in environment
-2. Cannot trigger actual GitHub workflows without it
+**Bug Fixed**:
+- Issue: `read` command was failing silently on line 272
+- Fix: Changed from process substitution `< <()` to command substitution `$()`
+- Commit: f61cb2c
+- Validation: shellcheck clean after fix
 
-**Options**:
-1. **Product Owner provides WEBHOOK_URL** → Run full test suite
-2. **Mock testing** → Limited value, real GitHub API behavior needed
-3. **Mark as implemented** → Based on static validation + design correctness
+**Functional Test Results**:
 
-**Recommendation**: Request Product Owner to provide WEBHOOK_URL for functional testing, or approve based on:
-- ✅ Complete implementation per design
-- ✅ Static validation passed
-- ✅ Integration with existing sprints verified
-- ✅ Comprehensive test script created
-- ⏳ Functional testing pending environment setup
+**Test 1: GH-7 Cancel During Execution** ✅
+- Run ID: 19143943624
+- Workflow: long-run-logger (20 iterations, 3 sec sleep)
+- Status before cancel: `in_progress`
+- Cancellation result: SUCCESS
+- Final status: `completed`
+- Final conclusion: `cancelled`
+- Cancellation duration: 14 seconds
+- Verification: Confirmed with view-run-jobs.sh
+
+**Test 2: Error Handling** ✅
+- Run ID: 19143910971 (already completed workflow)
+- Expected: Error message "Cannot cancel run - workflow already completed"
+- Result: Correct error message displayed
+- Exit code: 1 (correct)
+
+**Test 3: GH-6 Immediate Cancellation** ✅
+- Run ID: 19143972202
+- Workflow: long-run-logger (30 iterations, 2 sec sleep)
+- Cancel timing: Immediately after dispatch
+- Result: Workflow cancelled
+- Final conclusion: `cancelled`
+- Verification: Confirmed with view-run-jobs.sh
+
+**Integration Verification** ✅:
+- trigger-and-track.sh → cancel-run.sh: Works
+- cancel-run.sh → view-run-jobs.sh: Verification works
+- JSON output parsing: Works
+- --wait flag: Polls correctly until cancelled
+
+### Functional Testing Status: COMPLETE ✅
+
+All functional tests passed successfully! Both GH-6 and GH-7 requirements met.
 
 ## Code Quality
 
