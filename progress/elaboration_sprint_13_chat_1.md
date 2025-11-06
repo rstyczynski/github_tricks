@@ -42,7 +42,7 @@ Created comprehensive design document: `progress/sprint_13_design.md`
 
 **Technical Approach**:
 - Selected curl-based REST API approach (following Sprint 9 pattern)
-- Token authentication from `./secrets/github_token` file
+- Token authentication from `.secrets/token` file
 - Repository auto-detection from git config (with fallbacks)
 
 **Design Principles**:
@@ -70,7 +70,7 @@ Created comprehensive design document: `progress/sprint_13_design.md`
 - Required parameters: `--head`, `--title`
 - Optional parameters: `--base` (default: `main`), `--body`, `--reviewers`, `--labels`, `--issue`, `--draft`
 - Repository auto-detection from git config
-- Token authentication from `./secrets/github_token`
+- Token authentication from `.secrets/token`
 - Dual output formats: human-readable (default) and JSON (`--json`)
 
 **API Endpoint**: `POST /repos/{owner}/{repo}/pulls`

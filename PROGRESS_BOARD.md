@@ -1,122 +1,21 @@
 # Progress board
 
-## Sprint 11
+Progress board is a table showing sprint, and backlog items state. It's the only purpose of this file. All potential comments, progress notes, etc. always keep in dedicated files for each phase.
 
-Status: implemented
-
-**All backlog items tested successfully!**
-
-### GH-6. Cancel requested workflow
-
-Status: tested
-
-**Implementation**: ✅ Complete (scripts/cancel-run.sh)
-**Static Validation**: ✅ PASSED (shellcheck, actionlint, basic functionality)
-**Functional Testing**: ✅ PASSED
-
-**Test Attempts**: 2/10
-
-- Attempt 1: Static validation only
-- Attempt 2: Bug fix + Functional test with long-running workflow
-
-**Test Results**:
-
-- ✅ Workflow cancelled successfully (run_id: 19143943624, 19143972202)
-- ✅ Status: "completed", Conclusion: "cancelled"  
-- ✅ Error handling: Correct message for already-completed workflows
-- ✅ Cancellation timing: ~14 seconds
-
-### GH-7. Cancel running workflow
-
-Status: tested
-
-**Implementation**: ✅ Complete (same script as GH-6, different test scenarios)
-**Static Validation**: ✅ PASSED
-**Functional Testing**: ✅ PASSED
-
-**Test Attempts**: 2/10 (same as GH-6)
-
-**Test Results**:
-
-- ✅ Cancel after correlation: Tested (immediate cancel scenario)
-- ✅ Cancel during execution: Tested with long-run-logger (20 iterations)
-- ✅ Status transitions verified: in_progress → cancelled
-- ✅ Verification with view-run-jobs.sh: Confirmed
-
-## Sprint 12
-
-Status: failed
-
-**Reason**: GitHub does not provide native scheduling for workflow_dispatch events. External schedulers are not an option in this project.
-
-### GH-8. Schedule workflow
-
-Status: failed
-
-**Reason**: GitHub API does not support scheduling workflow_dispatch events natively. External scheduler solutions are not allowed in this project.
-
-### GH-9. Cancel scheduled workflow
-
-Status: failed
-
-**Reason**: Depends on GH-8, which cannot be implemented due to GitHub API limitations.
-
-## Sprint 13
-
-Status: implemented
-
-**All backlog items implemented! Static validation passed. Functional testing pending test environment.**
-
-### GH-17. Create Pull Request
-
-Status: implemented
-
-**Implementation**: ✅ Complete (scripts/create-pr.sh)
-**Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
-
-**Test Attempts**: 1/10
-
-- Attempt 1: Static validation + error handling tests
-
-**Test Results**:
-- ✅ shellcheck: No issues
-- ✅ --help flag: Works correctly
-- ✅ Error handling: Correct messages for missing required parameters
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
-
-### GH-18. List Pull Requests
-
-Status: implemented
-
-**Implementation**: ✅ Complete (scripts/list-prs.sh)
-**Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
-
-**Test Attempts**: 1/10
-
-- Attempt 1: Static validation + error handling tests
-
-**Test Results**:
-- ✅ shellcheck: No issues
-- ✅ --help flag: Works correctly
-- ✅ Error handling: Correct messages for missing token file
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
-
-### GH-19. Update Pull Request
-
-Status: implemented
-
-**Implementation**: ✅ Complete (scripts/update-pr.sh)
-**Static Validation**: ✅ PASSED (shellcheck, basic functionality)
-**Functional Testing**: ⏳ PENDING (requires GitHub token and repository access)
-
-**Test Attempts**: 1/10
-
-- Attempt 1: Static validation + error handling tests
-
-**Test Results**:
-- ✅ shellcheck: No issues
-- ✅ --help flag: Works correctly
-- ✅ Error handling: Correct messages for missing update fields
-- ⏳ Functional tests: Blocked by missing token file (prerequisite, not code issue)
+| Sprint | Sprint Status | Backlog Item | Item Status |
+|--------|---------------|--------------|-------------|
+| Sprint 11 | implemented | GH-6. Cancel requested workflow | tested |
+| Sprint 11 | implemented | GH-7. Cancel running workflow | tested |
+| Sprint 12 | failed | GH-8. Schedule workflow | failed |
+| Sprint 12 | failed | GH-9. Cancel scheduled workflow | failed |
+| Sprint 14 | implemented | GH-20. Merge Pull Request | tested |
+| Sprint 14 | implemented | GH-22. Pull Request Comments | tested |
+| Sprint 14 | implemented | GH-17. Create Pull Request | tested |
+| Sprint 14 | implemented | GH-18. List Pull Requests | tested |
+| Sprint 14 | implemented | GH-19. Update Pull Request | tested |
+| Sprint 15 | implemented | GH-14. Trigger workflow with REST API | implemented |
+| Sprint 15 | implemented | GH-15. Workflow correlation with REST API | implemented |
+| Sprint 15 | implemented | GH-16. Fetch logs with REST API | implemented |
+| Sprint 16 | implemented | GH-23. List workflow artifacts | implemented |
+| Sprint 17 | proposed | GH-24. Download workflow artifacts | proposed |
+| Sprint 18 | proposed | GH-25. Delete workflow artifacts | proposed |
