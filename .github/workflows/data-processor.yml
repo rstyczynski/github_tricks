@@ -1,0 +1,124 @@
+name: Data Processor
+
+run-name: >
+  Data Processor${{ inputs.correlation_id != '' && format(' ({0})', inputs.correlation_id) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Operation: add, multiply, concat"
+        required: true
+        type: string
+      value1:
+        description: "First operand"
+        required: true
+        type: string
+      value2:
+        description: "Second operand"
+        required: true
+        type: string
+      correlation_id:
+        description: "Optional correlation token"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    outputs:
+      result_data: ${{ steps.compute.outputs.result_data }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Process inputs
+        id: compute
+        run: |
+          # Process based on operation
+          operation="${{ inputs.operation }}"
+          value1="${{ inputs.value1 }}"
+          value2="${{ inputs.value2 }}"
+          timestamp=$(date --iso-8601=seconds)
+
+          echo "Processing: $operation($value1, $value2)"
+
+          if [[ -n "${{ inputs.correlation_id }}" ]]; then
+            echo "Correlation ID: ${{ inputs.correlation_id }}"
+          fi
+
+          # Perform operation
+          case "$operation" in
+            add)
+              # Validate numeric inputs
+              if ! [[ "$value1" =~ ^-?[0-9]+$ ]] || ! [[ "$value2" =~ ^-?[0-9]+$ ]]; then
+                echo "Error: add operation requires numeric values"
+                exit 1
+              fi
+              result=$((value1 + value2))
+              ;;
+            multiply)
+              # Validate numeric inputs
+              if ! [[ "$value1" =~ ^-?[0-9]+$ ]] || ! [[ "$value2" =~ ^-?[0-9]+$ ]]; then
+                echo "Error: multiply operation requires numeric values"
+                exit 1
+              fi
+              result=$((value1 * value2))
+              ;;
+            concat)
+              result="${value1}${value2}"
+              ;;
+            *)
+              echo "Error: Unknown operation '$operation'. Valid operations: add, multiply, concat"
+              exit 1
+              ;;
+          esac
+
+          echo "Result: $result"
+
+          # Build JSON output - escape for GitHub Actions output
+          result_json=$(jq -n \
+            --arg op "$operation" \
+            --arg v1 "$value1" \
+            --arg v2 "$value2" \
+            --arg res "$result" \
+            --arg ts "$timestamp" \
+            --arg rid "$GITHUB_RUN_ID" \
+            '{
+              operation: $op,
+              inputs: {value1: $v1, value2: $v2},
+              result: $res,
+              timestamp: $ts,
+              run_id: $rid
+            }' | jq -c .)
+
+          echo "result_data=$result_json" >> "$GITHUB_OUTPUT"
+          echo "Generated output data:"
+          echo "$result_json" | jq .
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Workflow Execution Summary"
+            echo ""
+            echo "- **Operation**: ${{ inputs.operation }}"
+            echo "- **Input 1**: ${{ inputs.value1 }}"
+            echo "- **Input 2**: ${{ inputs.value2 }}"
+            echo "- **Run ID**: ${{ github.run_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ -n "${{ inputs.correlation_id }}" ]]; then
+            echo "- **Correlation ID**: ${{ inputs.correlation_id }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [[ "${{ job.status }}" == "success" ]]; then
+            {
+              echo ""
+              echo "### Result Data"
+              echo '```json'
+              echo '${{ steps.compute.outputs.result_data }}' | jq .
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
