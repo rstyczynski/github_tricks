@@ -25,4 +25,4 @@ Progress board is a table showing sprint, and backlog items state. It's the only
 | Sprint 19 | implemented | GH-26.4. Summarize: Manage workflow artifacts via REST API | tested |
 | Sprint 19 | implemented | GH-26.5. Summarize: Manage pull requests via REST API | tested |
 | Sprint 19 | implemented | GH-26.6. Auto-generate API operations summary | tested |
-| Sprint 20 | under_analysis | GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion | analysed |
+| Sprint 20 | designed | GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion | designed |
