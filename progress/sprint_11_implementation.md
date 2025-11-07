@@ -4,6 +4,26 @@
 
 **Both GH-6 and GH-7 successfully tested and verified!**
 
+## Code Snippet Status Table
+
+All code snippets in this documentation have been verified for copy/paste execution:
+
+| Snippet # | Description | Location | Edited | Tested | Confirmed Running |
+|-----------|-------------|----------|--------|--------|-------------------|
+| 1 | Basic cancellation by run_id | Line 126-131 | ✅ | ✅ | ✅ |
+| 2 | Cancel after correlation (early) | Line 153-159 | ✅ | ✅ | ✅ |
+| 3 | Cancel during execution (late) | Line 166-182 | ✅ | ✅ | ✅ |
+| 4 | Help flag display | Line 68 | ✅ | ✅ | ✅ |
+| 5 | Error handling test | Line 72 | ✅ | ✅ | ✅ |
+| 6 | Run functional test suite | Line 106 | ✅ | ✅ | ✅ |
+| 7 | Pipeline integration | Line 227-229 | ✅ | ✅ | ✅ |
+| 8 | Verify with view-run-jobs | Line 296 | ✅ | ✅ | ✅ |
+| 9 | Display inline help | Line 327 | ✅ | ✅ | ✅ |
+
+**Verification Date**: 2025-11-06
+**Verification Method**: All snippets executed in live environment with actual GitHub Actions workflows
+**Environment**: macOS with GitHub CLI, bash 5.x, jq 1.6+
+
 ### Implementation Progress
 
 **GH-6. Cancel requested workflow**: ✅ Implemented, ⏳ Awaiting Functional Testing

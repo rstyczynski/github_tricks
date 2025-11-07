@@ -19,7 +19,7 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 - **Workflow Status Monitoring**: Wait for workflow completion with polling
   - Wait for completion: `wait-workflow-completion-curl.sh` (Sprint 17)
 - **Job Monitoring**: View workflow job phases and status (gh CLI or curl-based)
-- **Workflow Cancellation**: Cancel workflows in requested or running states
+- **Workflow Cancellation**: Cancel workflows in requested or running states with support for force-cancel and wait-for-completion
 - **Benchmarking**: Measure timing for correlation and log retrieval
 
 ### Pull Request Management
@@ -100,6 +100,15 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 
 # Cancel a running workflow
 ./scripts/cancel-run.sh --run-id <run_id>
+
+# Cancel and wait for completion
+./scripts/cancel-run.sh --run-id <run_id> --wait
+
+# Cancel using correlation ID
+./scripts/cancel-run.sh --correlation-id <uuid> --runs-dir runs
+
+# Force cancel (bypasses always() conditions)
+./scripts/cancel-run.sh --run-id <run_id> --force --wait
 ```
 
 ### Pull Request Management
@@ -145,7 +154,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 - `wait-workflow-completion-curl.sh` - Wait for workflow completion with polling (curl, Sprint 17)
 - `view-run-jobs.sh` - Display job phases and status (gh CLI with browser auth)
 - `view-run-jobs-curl.sh` - Display job phases and status (curl with token auth)
-- `cancel-run.sh` - Cancel workflows in requested or running states
+- `cancel-run.sh` - Cancel workflows with options for force-cancel, wait-for-completion, and correlation ID support (Sprint 11)
 
 **Benchmarking:**
 
