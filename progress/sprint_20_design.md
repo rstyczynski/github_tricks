@@ -1,6 +1,6 @@
 # Sprint 20 - Design
 
-Status: Proposed
+Status: Accepted
 
 ## GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion
 

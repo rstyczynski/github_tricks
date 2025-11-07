@@ -1,0 +1,47 @@
+[
+  {
+    "test": "Help message display",
+    "status": "PASS",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "duration_seconds": 0,
+    "log_file": "/Users/rstyczynski/projects/github_tricks/tests/logs/Help_message_display.log",
+    "timestamp": "2025-11-07T10:16:02Z"
+  },
+  {
+    "test": "Missing required parameter",
+    "status": "PASS",
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "duration_seconds": 0,
+    "log_file": "/Users/rstyczynski/projects/github_tricks/tests/logs/Missing_required_parameter.log",
+    "timestamp": "2025-11-07T10:16:02Z"
+  },
+  {
+    "test": "Invalid array length (negative)",
+    "status": "PASS",
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "duration_seconds": 1,
+    "log_file": "/Users/rstyczynski/projects/github_tricks/tests/logs/Invalid_array_length_(negative).log",
+    "timestamp": "2025-11-07T10:16:03Z"
+  },
+  {
+    "test": "Invalid array length (zero)",
+    "status": "PASS",
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "duration_seconds": 0,
+    "log_file": "/Users/rstyczynski/projects/github_tricks/tests/logs/Invalid_array_length_(zero).log",
+    "timestamp": "2025-11-07T10:16:03Z"
+  },
+  {
+    "test": "Invalid array length (>1000)",
+    "status": "PASS",
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "duration_seconds": 0,
+    "log_file": "/Users/rstyczynski/projects/github_tricks/tests/logs/Invalid_array_length_(>1000).log",
+    "timestamp": "2025-11-07T10:16:03Z"
+  }
+]

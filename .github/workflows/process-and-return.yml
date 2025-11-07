@@ -1,0 +1,219 @@
+name: Process and Return Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      input_string:
+        description: 'String to include in array elements'
+        required: true
+        type: string
+      array_length:
+        description: 'Number of array elements to generate'
+        required: true
+        type: number
+      correlation_id:
+        description: 'Correlation ID for tracking (auto-injected)'
+        required: false
+        type: string
+        default: 'no-correlation-id'
+
+jobs:
+  process:
+    name: Process Parameters and Generate Array
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Validate inputs
+        run: |
+          echo "=========================================="
+          echo "         INPUT VALIDATION"
+          echo "=========================================="
+          echo "Input String:   ${{ inputs.input_string }}"
+          echo "Array Length:   ${{ inputs.array_length }}"
+          echo "Correlation ID: ${{ inputs.correlation_id }}"
+          echo ""
+          
+          # Validate array_length is positive integer
+          if ! [[ "${{ inputs.array_length }}" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: array_length must be a positive integer"
+            exit 1
+          fi
+          
+          if [[ "${{ inputs.array_length }}" -lt 1 ]]; then
+            echo "ERROR: array_length must be at least 1"
+            exit 1
+          fi
+          
+          if [[ "${{ inputs.array_length }}" -gt 1000 ]]; then
+            echo "WARNING: array_length > 1000, capping at 1000 for safety"
+          fi
+          
+          echo "✓ Validation passed"
+          echo ""
+      
+      - name: Generate array
+        id: generate
+        run: |
+          echo "=========================================="
+          echo "      ARRAY GENERATION"
+          echo "=========================================="
+          echo ""
+          
+          INPUT_STRING="${{ inputs.input_string }}"
+          ARRAY_LENGTH=${{ inputs.array_length }}
+          CORRELATION_ID="${{ inputs.correlation_id }}"
+          
+          # Cap at 1000 for safety
+          if [[ ${ARRAY_LENGTH} -gt 1000 ]]; then
+            echo "Capping array length at 1000 (requested: ${ARRAY_LENGTH})"
+            ARRAY_LENGTH=1000
+          fi
+          
+          # Create result directory
+          mkdir -p result
+          
+          echo "Starting array generation..."
+          echo "  Target length: ${ARRAY_LENGTH}"
+          echo "  Element prefix: ${INPUT_STRING}"
+          echo ""
+          
+          # Initialize JSON structure
+          {
+            echo "{"
+            echo "  \"correlation_id\": \"${CORRELATION_ID}\","
+            echo "  \"input_string\": \"${INPUT_STRING}\","
+            echo "  \"requested_length\": ${ARRAY_LENGTH},"
+            echo "  \"generated_array\": ["
+          } > result/result.json
+          
+          # Generate array elements with progress logging
+          for ((i=0; i<${ARRAY_LENGTH}; i++)); do
+            # Add element
+            if [[ $i -lt $((ARRAY_LENGTH - 1)) ]]; then
+              echo "    \"${INPUT_STRING}_${i}\"," >> result/result.json
+            else
+              echo "    \"${INPUT_STRING}_${i}\"" >> result/result.json
+            fi
+            
+            # Progress logging every 10 elements or every 5 seconds
+            if [[ $((i % 10)) -eq 0 ]]; then
+              echo "Progress: Generated $i / ${ARRAY_LENGTH} elements"
+              # Add small delay to ensure reasonable workflow runtime
+              sleep 0.5
+            fi
+          done
+          
+          # Complete JSON structure
+          {
+            echo "  ],"
+            echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\","
+            echo "  \"hostname\": \"$(hostname)\","
+            echo "  \"runner\": \"${{ runner.os }}\""
+            echo "}"
+          } >> result/result.json
+          
+          echo ""
+          echo "✓ Array generation complete"
+          
+          # Add additional delay to ensure workflow runs long enough for testing
+          # Target ~30-60 seconds total runtime
+          CURRENT_SECONDS=$SECONDS
+          if [[ ${CURRENT_SECONDS} -lt 30 ]]; then
+            SLEEP_TIME=$((30 - CURRENT_SECONDS))
+            echo "Adding ${SLEEP_TIME}s delay to reach target runtime of 30s..."
+            sleep ${SLEEP_TIME}
+          fi
+          
+          echo ""
+          echo "Processing completed in ${SECONDS} seconds"
+          echo ""
+      
+      - name: Validate result
+        run: |
+          echo "=========================================="
+          echo "      RESULT VALIDATION"
+          echo "=========================================="
+          echo ""
+          
+          if [[ ! -f result/result.json ]]; then
+            echo "ERROR: Result file not found"
+            exit 1
+          fi
+          
+          # Validate JSON format
+          if ! jq empty result/result.json 2>/dev/null; then
+            echo "ERROR: Invalid JSON format"
+            cat result/result.json
+            exit 1
+          fi
+          
+          # Validate required fields
+          if ! jq -e '.generated_array' result/result.json > /dev/null; then
+            echo "ERROR: Missing 'generated_array' field"
+            exit 1
+          fi
+          
+          if ! jq -e '.correlation_id' result/result.json > /dev/null; then
+            echo "ERROR: Missing 'correlation_id' field"
+            exit 1
+          fi
+          
+          if ! jq -e '.input_string' result/result.json > /dev/null; then
+            echo "ERROR: Missing 'input_string' field"
+            exit 1
+          fi
+          
+          # Extract and display metadata
+          ACTUAL_LENGTH=$(jq '.generated_array | length' result/result.json)
+          INPUT_STR=$(jq -r '.input_string' result/result.json)
+          CORR_ID=$(jq -r '.correlation_id' result/result.json)
+          TIMESTAMP=$(jq -r '.timestamp' result/result.json)
+          
+          echo "Validation Results:"
+          echo "  Correlation ID: ${CORR_ID}"
+          echo "  Input String:   ${INPUT_STR}"
+          echo "  Array Length:   ${ACTUAL_LENGTH}"
+          echo "  Timestamp:      ${TIMESTAMP}"
+          echo ""
+          
+          # Sample first few elements
+          echo "Array Sample (first 5 elements):"
+          jq -r '.generated_array[0:5][]' result/result.json
+          echo ""
+          
+          echo "✓ Validation passed"
+          echo ""
+      
+      - name: Upload result artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: processing-result
+          path: result/
+          retention-days: 7
+          compression-level: 6
+      
+      - name: Display completion summary
+        run: |
+          echo "=========================================="
+          echo "      WORKFLOW COMPLETE"
+          echo "=========================================="
+          echo ""
+          echo "Summary:"
+          echo "  Correlation ID: ${{ inputs.correlation_id }}"
+          echo "  Input String:   ${{ inputs.input_string }}"
+          echo "  Array Length:   $(jq '.generated_array | length' result/result.json)"
+          echo "  Artifact Name:  processing-result"
+          echo "  Total Runtime:  ${SECONDS} seconds"
+          echo ""
+          echo "Next Steps:"
+          echo "  1. Use correlation ID to retrieve run_id"
+          echo "  2. Fetch logs using run_id"
+          echo "  3. Download artifact 'processing-result'"
+          echo "  4. Extract result.json from artifact"
+          echo ""
+          echo "=========================================="
+
