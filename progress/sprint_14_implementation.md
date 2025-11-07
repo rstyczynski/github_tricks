@@ -17,6 +17,26 @@
 - `scripts/merge-pr.sh` (330 lines) - Merge pull request script
 - `scripts/pr-comments.sh` (750 lines) - Pull request comments script
 
+### Documentation Snippet Status
+
+All code snippets provided in this documentation have been tested and verified:
+
+| Snippet ID | Description | Status | Verified By |
+|------------|-------------|--------|-------------|
+| GH-20-1 | Merge PR with squash method | ✅ Tested | Copy/paste execution |
+| GH-20-2 | Merge PR with merge method | ✅ Tested | Copy/paste execution |
+| GH-20-3 | Merge with mergeable check | ✅ Tested | Copy/paste execution |
+| GH-20-4 | JSON output format | ✅ Tested | Copy/paste execution |
+| GH-20-5 | Custom commit message | ✅ Tested | Copy/paste execution |
+| GH-22-1 | Add general comment | ✅ Tested | Copy/paste execution |
+| GH-22-2 | Add inline comment | ✅ Tested | Copy/paste execution |
+| GH-22-3 | Update comment | ✅ Tested | Copy/paste execution |
+| GH-22-4 | Delete comment | ✅ Tested | Copy/paste execution |
+| GH-22-5 | List inline comments | ✅ Tested | Copy/paste execution |
+| INT-1 | Create → Comment → Merge workflow | ✅ Tested | Copy/paste execution |
+| INT-2 | Add inline comment pattern | ✅ Tested | Copy/paste execution |
+| INT-3 | Update comment pattern | ✅ Tested | Copy/paste execution |
+
 ### Implementation Details
 
 **`scripts/merge-pr.sh`** implements all design requirements:
