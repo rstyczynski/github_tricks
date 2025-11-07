@@ -179,10 +179,33 @@ Extend workflow management capabilities with artifact download operations. Imple
 
 ## Sprint 18
 
-Status: Planned
+Status: Done
 
 Backlog Items:
 
 * GH-25. Delete workflow artifacts
 
 Extend workflow management capabilities with artifact deletion operations. Implement REST API-based artifact deletion using curl, following the pattern established in Sprint 15. The implementation should use token authentication from `./secrets` directory, support deleting individual artifacts or all artifacts for a run, validate deletion permissions, and provide comprehensive error handling for scenarios such as artifacts already deleted or insufficient permissions.
+
+## Sprint 19
+
+Status: Done
+
+Backlog Items:
+
+* GH-26.1. Summarize: Trigger workflow via REST API
+* GH-26.2. Summarize: Correlate workflow runs via REST API
+* GH-26.3. Summarize: Retrieve workflow logs via REST API
+* GH-26.4. Summarize: Manage workflow artifacts via REST API
+* GH-26.5. Summarize: Manage pull requests via REST API
+* GH-26.6. Auto-generate API operations summary
+
+## Sprint 20
+
+Status: Done
+
+Backlog Items:
+
+* GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion
+
+Use already existing scripts to establish a sequence of script invocations. Provide parameters: string and number, and return in artifacts array of string with the provided length.

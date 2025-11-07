@@ -4,8 +4,9 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 
 ## 📚 API Documentation
 
-**NEW in Sprint 19**: Comprehensive API operation summaries and automation system
+**NEW in Sprint 20**: End-to-end workflow orchestration system
 
+- **Orchestrate Workflows**: [docs/api-orchestrate-workflow.md](docs/api-orchestrate-workflow.md) - Complete end-to-end automation guide
 - **API Operations Summary**: [docs/API_OPERATIONS_SUMMARY.md](docs/API_OPERATIONS_SUMMARY.md) - Auto-generated comprehensive guide
 - **Trigger Workflows**: [docs/api-trigger-workflow.md](docs/api-trigger-workflow.md) - Complete guide with examples
 - **Correlate Runs**: [docs/api-correlate-runs.md](docs/api-correlate-runs.md) - UUID-based run correlation
@@ -22,6 +23,11 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 
 ### Workflow Management
 
+- **End-to-End Orchestration**: Complete workflow automation from trigger to artifact retrieval (Sprint 20)
+  - Orchestrator script: `orchestrate-workflow.sh` - Sequences all workflow operations
+  - 7-step pipeline: trigger → correlate → wait → logs → list → download → extract
+  - Configurable timeouts and polling intervals
+  - State management and comprehensive error handling
 - **Trigger & Track**: Dispatch workflows and correlate run IDs (UUID-based, median 17s, see `tests/correlation-timings.json`)
   - `gh` CLI version: `trigger-and-track.sh`
   - REST API version: `trigger-workflow-curl.sh` + `correlate-workflow-curl.sh` (Sprint 15)
@@ -58,6 +64,12 @@ Tools and techniques for interacting with GitHub Actions workflows via API and C
 ### Workflow Management
 
 ```bash
+# End-to-end orchestration (NEW in Sprint 20)
+./scripts/orchestrate-workflow.sh --string "test" --length 10
+
+# With custom timeout
+./scripts/orchestrate-workflow.sh --string "data" --length 50 --max-wait 1200
+
 # Set up GitHub token and webhook URL
 export GITHUB_TOKEN="your_token"
 export WEBHOOK_URL="https://webhook.site/your-endpoint"
@@ -159,6 +171,7 @@ export WEBHOOK_URL="https://webhook.site/your-endpoint"
 
 **Core Tools:**
 
+- `orchestrate-workflow.sh` - End-to-end workflow orchestration from trigger to artifact retrieval (Sprint 20)
 - `trigger-and-track.sh` - Trigger workflow and retrieve run ID via UUID correlation (gh CLI)
 - `trigger-workflow-curl.sh` - Trigger workflow using REST API (curl, Sprint 15)
 - `correlate-workflow-curl.sh` - Correlate workflow runs using REST API (curl, Sprint 15)
@@ -257,6 +270,8 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 **Current Status:**
 
+- Sprint 20: ✅ Done (End-to-End Orchestration - GH-27)
+- Sprint 19: ✅ Done (API Documentation Automation - GH-26.1 to GH-26.6)
 - Sprint 18: ✅ Done (Artifact Deletion - GH-25)
 - Sprint 17: ✅ Done (Artifact Download - GH-24)
 - Sprint 16: ✅ Done (Artifact Listing - GH-23)
