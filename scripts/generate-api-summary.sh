@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+#
+# generate-api-summary.sh - Generate API operations summary from parsed Sprint data
+#
+# Usage: cat sprint_data.json | ./scripts/generate-api-summary.sh
+#
+# Input: JSON array of Sprint data from parse-implementation.sh
+# Output: Markdown summary in docs/API_OPERATIONS_SUMMARY.md
+#
+
+set -euo pipefail
+
+# Read JSON from stdin
+SPRINT_DATA=$(cat)
+
+# Create output directory
+mkdir -p docs
+
+# Generate summary document
+cat > docs/API_OPERATIONS_SUMMARY.md <<'HEADER'
+# GitHub Workflow Management - API Operations Summary
+
+**Auto-Generated Documentation**
+
+HEADER
+
+# Add generation timestamp
+echo "**Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> docs/API_OPERATIONS_SUMMARY.md
+echo "" >> docs/API_OPERATIONS_SUMMARY.md
+
+# Add overview
+cat >> docs/API_OPERATIONS_SUMMARY.md <<'OVERVIEW'
+## Overview
+
+This document provides an authoritative summary of all implemented REST API operations for GitHub workflow management. It is automatically generated from Sprint implementation artifacts.
+
+## Quick Links
+
+- [Trigger Workflows](api-trigger-workflow.md) - Start workflow executions
+- [Correlate Runs](api-correlate-runs.md) - Track workflow runs by correlation ID
+- [Retrieve Logs](api-retrieve-logs.md) - Download job execution logs
+- [Manage Artifacts](api-manage-artifacts.md) - List, download, delete artifacts
+- [Manage Pull Requests](api-manage-prs.md) - Create, update, merge PRs
+
+## Implementation Status by Sprint
+
+| Sprint | Status | Backlog Items | Test Count | Implementation |
+|--------|--------|---------------|------------|----------------|
+OVERVIEW
+
+# Process each Sprint JSON entry and add table row
+echo "$SPRINT_DATA" | jq -r '.[] | "\(.sprint)|\(.status)|\(.backlog_items)|\(.test_count)|[View](\(.file))"' | \
+  while IFS='|' read -r sprint status items tests file; do
+    printf "| Sprint %s | %s | %s | %s | %s |\n" "$sprint" "$status" "$items" "$tests" "$file" >> docs/API_OPERATIONS_SUMMARY.md
+  done
+
+# Add detailed sections
+cat >> docs/API_OPERATIONS_SUMMARY.md <<'DETAILS'
+
+## API Operation Categories
+
+### Workflow Operations
+
+**Trigger Workflows** (Sprint 15, GH-14)
+- Endpoint: `POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches`
+- Script: `scripts/trigger-workflow-curl.sh`
+- Features: Correlation ID support, workflow inputs, JSON output
+- Documentation: [api-trigger-workflow.md](api-trigger-workflow.md)
+
+**Correlate Workflow Runs** (Sprint 15, GH-15)
+- Endpoint: `GET /repos/{owner}/{repo}/actions/runs`
+- Script: `scripts/correlate-workflow-curl.sh`
+- Features: UUID correlation, filtering, pagination
+- Documentation: [api-correlate-runs.md](api-correlate-runs.md)
+
+**Retrieve Workflow Logs** (Sprint 15, GH-16)
+- Endpoint: `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs`
+- Script: `scripts/fetch-logs-curl.sh`
+- Features: Multi-job aggregation, log streaming
+- Documentation: [api-retrieve-logs.md](api-retrieve-logs.md)
+
+### Artifact Operations
+
+**List Artifacts** (Sprint 16, GH-23)
+- Endpoint: `GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts`
+- Script: `scripts/list-artifacts-curl.sh`
+- Features: Name filtering, JSON output, pagination
+
+**Download Artifacts** (Sprint 17, GH-24)
+- Endpoint: `GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip`
+- Script: `scripts/download-artifact-curl.sh`
+- Features: Bulk download, streaming, extraction
+
+**Delete Artifacts** (Sprint 18, GH-25)
+- Endpoint: `DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}`
+- Script: `scripts/delete-artifact-curl.sh`
+- Features: Safety confirmations, dry-run, bulk deletion
+
+**Comprehensive Guide**: [api-manage-artifacts.md](api-manage-artifacts.md)
+
+### Pull Request Operations
+
+**Create Pull Request** (Sprint 13, GH-17)
+- Endpoint: `POST /repos/{owner}/{repo}/pulls`
+- Script: `scripts/create-pr.sh`
+
+**List Pull Requests** (Sprint 13, GH-18)
+- Endpoint: `GET /repos/{owner}/{repo}/pulls`
+- Script: `scripts/list-prs.sh`
+
+**Update Pull Request** (Sprint 13, GH-19)
+- Endpoint: `PATCH /repos/{owner}/{repo}/pulls/{pull_number}`
+- Script: `scripts/update-pr.sh`
+
+**Merge Pull Request** (Sprint 14, GH-20)
+- Endpoint: `PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge`
+- Script: `scripts/merge-pr.sh`
+- Features: Multiple merge strategies (merge, squash, rebase)
+
+**PR Comments** (Sprint 14, GH-22)
+- Endpoint: `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments`
+- Script: `scripts/add-pr-comment.sh`
+
+**Comprehensive Guide**: [api-manage-prs.md](api-manage-prs.md)
+
+## Sprint Details
+
+DETAILS
+
+# Add detailed Sprint information
+echo "$SPRINT_DATA" | jq -r '.[] | "### Sprint \(.sprint) - \(.status)\n\n**Backlog Items**: \(.backlog_items)\n\n**Implementation**: [\(.file)](\(.file))\n\n**Test Count**: \(.test_count) verified snippets\n"' >> docs/API_OPERATIONS_SUMMARY.md
+
+# Add footer
+cat >> docs/API_OPERATIONS_SUMMARY.md <<'FOOTER'
+
+## Maintenance
+
+This summary is automatically generated by:
+- Scanner: `scripts/scan-sprint-artifacts.sh`
+- Parser: `scripts/parse-implementation.sh`
+- Generator: `scripts/generate-api-summary.sh`
+- Workflow: `.github/workflows/generate-api-summary.yml`
+
+To regenerate manually:
+```bash
+./scripts/scan-sprint-artifacts.sh | while IFS=: read sprint file; do
+  ./scripts/parse-implementation.sh "$file"
+done | jq -s '.' | ./scripts/generate-api-summary.sh
+```
+
+## Version History
+
+| Version | Date | Sprints Included | Generated By |
+|---------|------|------------------|--------------|
+FOOTER
+
+# Add current version entry
+SPRINT_COUNT=$(echo "$SPRINT_DATA" | jq 'length')
+echo "| 1.0 | $(date -u +"%Y-%m-%d") | $SPRINT_COUNT Sprints | Auto-generation system |" >> docs/API_OPERATIONS_SUMMARY.md
+
+echo "" >> docs/API_OPERATIONS_SUMMARY.md
+echo "---" >> docs/API_OPERATIONS_SUMMARY.md
+echo "" >> docs/API_OPERATIONS_SUMMARY.md
+echo "**Last Updated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> docs/API_OPERATIONS_SUMMARY.md
+
+echo "✓ API summary generated: docs/API_OPERATIONS_SUMMARY.md"
