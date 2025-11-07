@@ -2,6 +2,22 @@
 
 Tools and techniques for interacting with GitHub Actions workflows via API and CLI.
 
+## 📚 API Documentation
+
+**NEW in Sprint 19**: Comprehensive API operation summaries and automation system
+
+- **API Operations Summary**: [docs/API_OPERATIONS_SUMMARY.md](docs/API_OPERATIONS_SUMMARY.md) - Auto-generated comprehensive guide
+- **Trigger Workflows**: [docs/api-trigger-workflow.md](docs/api-trigger-workflow.md) - Complete guide with examples
+- **Correlate Runs**: [docs/api-correlate-runs.md](docs/api-correlate-runs.md) - UUID-based run correlation
+- **Retrieve Logs**: [docs/api-retrieve-logs.md](docs/api-retrieve-logs.md) - Job log retrieval guide
+- **Manage Artifacts**: [docs/api-manage-artifacts.md](docs/api-manage-artifacts.md) - Complete artifact lifecycle
+- **Manage Pull Requests**: [docs/api-manage-prs.md](docs/api-manage-prs.md) - PR operations guide
+
+**Automation**: Summary automatically generated from Sprint artifacts using:
+- `scripts/scan-sprint-artifacts.sh` - Scan for Sprint files
+- `scripts/parse-implementation.sh` - Extract structured data
+- `scripts/generate-api-summary.sh` - Generate markdown summary
+
 ## Features
 
 ### Workflow Management
