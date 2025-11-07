@@ -24,10 +24,10 @@ To execute individual phases:
 
 Before starting any work, you MUST read and understand all rules in `rules/` directory:
 
-1. **`rules/GENERAL_RULES_v3.md`** - Core cooperation rules, state machines, workflow, file ownership
-2. **`rules/GIT_RULES_v1.md`** - Git repository rules and commit conventions
-3. **`rules/GitHub_DEV_RULES_v4.md`** - GitHub-specific development rules and API usage
-4. **`rules/PRODUCT_OWNER_GUIDE_v3.md`** - Product Owner workflow (for context)
+1. **`rules/GENERAL_RULES*.md`** - Core cooperation rules, state machines, workflow, file ownership
+2. **`rules/GIT_RULES*.md`** - Git repository rules and commit conventions
+3. **`rules/GitHub_DEV_RULES*.md`** - GitHub-specific development rules and API usage
+4. **`rules/PRODUCT_OWNER_GUIDE*.md`** - Product Owner workflow (for context)
 
 **IMPORTANT**: You MUST comply with all rules without exceptions. If anything is unclear or conflicts, ask immediately.
 
