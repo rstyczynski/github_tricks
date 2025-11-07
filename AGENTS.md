@@ -146,7 +146,12 @@ Agents coordinate through:
 1. **Read and understand all rules** in `rules/` directory before starting
 2. **Follow the exact workflow** defined in your agent instruction file
 3. **Update PROGRESS_BOARD.md** with correct status tokens at each step
-4. **Create required documentation** in `progress/` directory
+4. **Create required documentation** in `progress/` directory:
+   - Contracting: `contracting_review_${cnt}.md`
+   - Inception: `sprint_${no}_analysis.md`
+   - Elaboration: `sprint_${no}_design.md`
+   - Construction: `sprint_${no}_implementation.md` **AND** `sprint_${no}_tests.md`
+   - Documentation: `sprint_${no}_documentation.md`
 5. **Run all tests** and record results accurately
 6. **Commit with semantic messages** following Git rules
 7. **Push to remote** after each phase completion
