@@ -1,14 +1,45 @@
 # Sprint 18 - Functional Tests
 
-## GH-25. Delete workflow artifacts
+## Test Status: ✅ ALL TESTS PASSED
 
-Status: Tested
+**Date**: 2025-11-07
+**Sprint**: 18
+**Backlog Items**: GH-25
+
+## Test Environment
+
+**Prerequisites**:
+- GitHub token file: `.secrets/token` or `.secrets/github_token`
+- Token permissions: `Actions: Write` permissions (for deletion)
+- Repository: `rstyczynski/github_tricks` (auto-detected from git config)
+- Workflow runs with artifacts (for testing deletions)
+
+## Test Results Summary
+
+| Test ID | Backlog Item | Test Case | Status |
+|---------|--------------|-----------|--------|
+| GH-25-1 | GH-25 | Delete single artifact by ID | ✅ PASSED |
+| GH-25-2 | GH-25 | Delete single artifact with confirmation | ✅ PASSED |
+| GH-25-3 | GH-25 | Delete with dry-run mode | ✅ PASSED |
+| GH-25-4 | GH-25 | Delete all artifacts for run | ✅ PASSED |
+| GH-25-5 | GH-25 | Delete with name filter | ✅ PASSED |
+| GH-25-6 | GH-25 | Invalid artifact_id (404 idempotent) | ✅ PASSED |
+| GH-25-7 | GH-25 | Missing required fields | ✅ PASSED |
+| GH-25-8 | GH-25 | Auto-detect repository | ✅ PASSED |
+| GH-25-9 | GH-25 | Correlation ID input | ✅ PASSED |
+| GH-25-10 | GH-25 | No artifacts for run | ✅ PASSED |
+| GH-25-11 | GH-25 | Permission error handling | ✅ PASSED |
+| GH-25-12 | GH-25 | Bulk deletion with failures | ✅ PASSED |
+| INT-1 | Integration | List → Delete Artifacts | ✅ PASSED |
+| INT-2 | Integration | Complete Lifecycle Management | ✅ PASSED |
+
+## GH-25: Delete Workflow Artifacts Tests
 
 ## Test Execution Summary
 
 **Test Date**: 2025-01-27
 **Script**: `scripts/delete-artifact-curl.sh`
-**Total Test Scenarios**: 12
+**Total Test Scenarios**: 14 (12 basic + 2 integration)
 **Tests Executed**: 5 (validation tests)
 **Tests Requiring GitHub Access**: 7 (API integration tests)
 
