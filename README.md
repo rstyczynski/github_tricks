@@ -247,5 +247,6 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 - Sprint 15: ✅ Done (REST API Validation - GH-14, GH-15, GH-16)
 - Sprint 14: ✅ Done (PR Merge & Comments)
 - Sprint 13: ✅ Done (PR Management)
+- Sprint 12: ❌ Failed (Workflow Scheduling - API Limitation)
 - Sprint 11: ✅ Done (Workflow Cancellation)
 - See `PLAN.md` and `PROGRESS_BOARD.md` for detailed status
