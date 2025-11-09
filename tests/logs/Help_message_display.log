@@ -1,0 +1,35 @@
+Usage: orchestrate-workflow.sh --string <value> --length <num> [options]
+
+Orchestrate end-to-end workflow execution from trigger to artifact retrieval.
+
+Required Parameters:
+  --string <value>      String to include in array elements
+  --length <number>     Number of array elements to generate (1-1000)
+
+Optional Parameters:
+  --workflow <file>     Workflow file path (default: .github/workflows/process-and-return.yml)
+  --max-wait <seconds>  Maximum wait time for completion (default: 600)
+  --interval <seconds>  Polling interval (default: 5)
+  --keep-state          Don't delete state file after completion
+  --help                Show this help message
+
+Exit Codes:
+  0  : Success - workflow completed, logs and artifacts retrieved
+  1  : Invalid arguments or missing prerequisites
+  2  : Workflow trigger failed
+  3  : Correlation failed (could not get run_id)
+  4  : Workflow execution failed
+  5  : Log retrieval failed
+  6  : Artifact retrieval failed
+  7  : Result extraction failed
+
+Examples:
+  # Basic orchestration
+  orchestrate-workflow.sh --string "test" --length 10
+  
+  # With custom workflow and timeout
+  orchestrate-workflow.sh --string "data" --length 50 --workflow custom.yml --max-wait 1200
+  
+  # Preserve state for debugging
+  orchestrate-workflow.sh --string "debug" --length 5 --keep-state
+

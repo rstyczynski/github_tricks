@@ -8,7 +8,7 @@ Welcome! This document is your starting point as a Product Owner or operator man
 
 1. **Define your project scope** in `BACKLOG.md`
 2. **Organize iterations** in `PLAN.md`
-3. **Read the complete Product Owner Guide**: `rules/PRODUCT_OWNER_GUIDE*.md`
+3. **Read the complete Product Owner Guide**: `rules/generic/PRODUCT_OWNER_GUIDE*.md`
 4. **Mark your first Sprint as "Progress"** in `PLAN.md`
 5. **Invoke the agent**: Send `@rup-manager.md` to your AI agent
 6. **Monitor progress** via `PROGRESS_BOARD.md` and git commits
@@ -65,21 +65,61 @@ Agents execute RUP phases automatically:
 4. **Construction** - Implement, test, and document
 5. **Documentation** - Validate docs and update README
 
+### Execution Modes
+
+You control agent autonomy by setting the Mode field in each Sprint section of `PLAN.md`:
+
+**Mode: managed (Default - Interactive)**
+- Agents ask for clarification
+- Wait for design approval
+- Stop for any ambiguity
+- Recommended for complex/high-risk work
+
+**Mode: YOLO (Autonomous)**
+- Agents make reasonable assumptions
+- Auto-approve designs
+- Minimal human interaction
+- Faster iteration (10-20 minutes per sprint)
+- All decisions logged in documentation
+- Recommended for routine/low-risk work
+
+**How to Set Mode:**
+
+Edit PLAN.md for your Sprint:
+```markdown
+## Sprint 20
+
+Status: Progress
+Mode: YOLO          ← Add this line for autonomous mode
+
+Backlog Items:
+* GH-27. Feature implementation
+```
+
+**Audit Trail:**
+The Mode field creates a permanent git record showing which sprints were autonomous vs supervised - important for compliance and retrospectives.
+
 ### When Agents Need You
 
-Agents will stop and wait when:
+**In Managed Mode** (default), agents will stop and wait when:
 - **Design approval needed** - Review and change Status to "Accepted"
 - **Clarification needed** - Answer questions in openquestions files
 - **Conflicts found** - Provide guidance to resolve
+
+**In YOLO Mode**, agents will only stop for:
+- **Critical failures** - Build errors, major API issues
+- **Explicit requests** - When you ask for status updates
+
+All YOLO decisions are logged in implementation documents for your review.
 
 ## Rules and Guidelines
 
 All detailed rules are in the `rules/` directory:
 
-1. **`rules/PRODUCT_OWNER_GUIDE*.md`** - Your complete workflow guide
-2. **`rules/GENERAL_RULES*.md`** - Cooperation rules and file ownership
-3. **`rules/GIT_RULES*.md`** - Git conventions
-4. **`rules/GitHub_DEV_RULES*.md`** - Development standards
+1. **`rules/generic/PRODUCT_OWNER_GUIDE*.md`** - Your complete workflow guide
+2. **`rules/generic/GENERAL_RULES*.md`** - Cooperation rules and file ownership
+3. **`rules/generic/GIT_RULES*.md`** - Git conventions
+4. **`rules/github_actions/GitHub_DEV_RULES*.md`** - Development standards
 
 **Read these files** for complete details on:
 - Sprint state machines
@@ -123,13 +163,13 @@ As Product Owner:
 
 1. ✅ Define scope in `BACKLOG.md`
 2. ✅ Plan iterations in `PLAN.md`
-3. ✅ Read complete guide: `rules/PRODUCT_OWNER_GUIDE*.md`
+3. ✅ Read complete guide: `rules/generic/PRODUCT_OWNER_GUIDE*.md`
 4. ✅ Invoke agents: `@rup-manager.md`
 5. ✅ Monitor via `PROGRESS_BOARD.md`
 6. ✅ Approve designs when requested
 7. ✅ Answer questions when agents ask
 
-**For complete details**, see `rules/PRODUCT_OWNER_GUIDE*.md`
+**For complete details**, see `rules/generic/PRODUCT_OWNER_GUIDE*.md`
 
 ---
 

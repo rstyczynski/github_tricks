@@ -1,6 +1,49 @@
 # Implementation Plan
 
-The plan organizes execution of Backlog Items specified in `BACKLOG.md` document in a form of iterations - Sprints after Scrum method. This document is owned by the Product Owner. The Implementor NEVER changes this document. The Product Owner owns the `Status` line under each phase chapter, inserting the design state according to the implementation state machine defined in `rules/GitHub_DEV_RULES*`. Implementors NEVER touch the status, but their actions are driven by it.
+The plan organizes execution of Backlog Items specified in `BACKLOG.md` document in a form of iterations - Sprints after Scrum method. This document is owned by the Product Owner. The Implementor NEVER changes this document. The Product Owner owns the `Status` line under each phase chapter, inserting the design state according to the implementation state machine defined in `rules/github_actions/GitHub_DEV_RULES*`. Implementors NEVER touch the status, but their actions are driven by it.
+
+## Sprint Execution Modes
+
+Each sprint can be executed in one of two modes:
+
+### Mode: managed (Default - Interactive)
+
+**Characteristics:**
+- Human-supervised execution
+- Agents ask for clarification on ambiguities
+- Interactive decision-making at each phase
+- Recommended for complex or high-risk sprints
+
+**Usage:** Add `Mode: managed` to sprint section (or omit Mode field, defaults to managed)
+
+### Mode: YOLO (Autonomous - "You Only Live Once")
+
+**Characteristics:**
+- Fully autonomous execution
+- Agents make reasonable assumptions for weak problems
+- No human interaction required
+- Faster iteration cycles
+- All decisions logged in implementation docs
+- Recommended for well-understood, low-risk sprints
+
+**Usage:** Add `Mode: YOLO` to sprint section
+
+**Benefits:**
+- ✅ Permanent audit trail in git history
+- ✅ Clear compliance record (autonomous vs supervised)
+- ✅ Faster development for routine tasks
+- ✅ Traceability for retrospectives
+
+**Example:**
+```markdown
+## Sprint 20
+
+Status: Progress
+Mode: YOLO
+
+Backlog Items:
+* GH-27. Trigger long running workflow
+```
 
 ## Sprint 0 - Prerequisites
 

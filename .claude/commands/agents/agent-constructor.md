@@ -19,15 +19,67 @@
 Before starting:
 - Elaboration phase must be complete
 - Design document must exist and be approved (Status = `Accepted`)
-- Design must be in `progress/sprint_${no}_design.md`
+- Design must be in `progress/sprint_${no}/sprint_${no}_design.md`
 - Confirm understanding of all design specifications
 
 ## Execution
 
+### Step 0: Detect Execution Mode
+
+**Before starting construction, determine the execution mode:**
+
+1. **Read PLAN.md**
+2. **Identify the active Sprint** (Sprint with `Status: Progress`)
+3. **Check for "Mode:" field** in that Sprint section
+   - If `Mode: YOLO` → **YOLO mode enabled** (autonomous)
+   - If `Mode: managed` or no Mode field → **Managed mode** (interactive)
+
+4. **Apply Mode-Specific Behaviors:**
+
+**YOLO Mode Behaviors:**
+- ✓ Proceed with partial test success (document failures, don't block)
+- ✓ Auto-fix simple linter errors without asking
+- ✓ Make reasonable naming/structure decisions based on existing code
+- ✓ Choose sensible defaults for ambiguous implementation details
+- ✓ Log all implementation choices
+- ✓ Only stop for critical build/runtime failures
+
+**Managed Mode Behaviors:**
+- ✓ Stop and ask about test failures
+- ✓ Request confirmation for significant implementation choices
+- ✓ Ask about naming conventions if unclear
+- ✓ Confirm approach for complex logic
+
+**Decision Logging (YOLO Mode Only):**
+
+If in YOLO mode, add a "YOLO Mode Decisions" section to the implementation document:
+```markdown
+## YOLO Mode Decisions
+
+This sprint was implemented in YOLO (autonomous) mode. The following implementation decisions were made:
+
+### Decision 1: [Implementation Choice]
+**Context**: [What needed to be decided]
+**Decision Made**: [What constructor chose]
+**Rationale**: [Why this implementation makes sense]
+**Alternatives Considered**: [Other options]
+**Risk**: [Low/Medium - what could go wrong]
+
+### Test Results in YOLO Mode
+**Tests Executed**: [count]
+**Passed**: [count]
+**Failed**: [count] - Proceeded anyway (documented in tests.md)
+**Rationale**: [Why it's acceptable to proceed]
+
+[Repeat for each significant decision]
+```
+
+---
+
 ### Step 1: Review Design
 
 Read the approved design document:
-- `progress/sprint_${no}_design.md`
+- `progress/sprint_${no}/sprint_${no}_design.md`
 
 Understand for each Backlog Item:
 - Technical specifications
@@ -68,7 +120,7 @@ For each Backlog Item:
 
 ### Step 4: Create Functional Tests
 
-Create `progress/sprint_${no}_tests.md` with comprehensive tests.
+Create `progress/sprint_${no}/sprint_${no}_tests.md` with comprehensive tests.
 
 **Critical Requirements:**
 - All tests MUST be copy-paste-able shell sequences
@@ -181,7 +233,7 @@ For each Backlog Item:
 
 ### Step 6: Create Implementation Documentation
 
-Create `progress/sprint_${no}_implementation.md` with:
+Create `progress/sprint_${no}/sprint_${no}_implementation.md` with:
 
 ```markdown
 # Sprint ${no} - Implementation Notes
@@ -430,8 +482,8 @@ Your final output should be:
 - Success Rate: [percentage]
 
 ### Documentation Created
-- progress/sprint_${no}_implementation.md
-- progress/sprint_${no}_tests.md
+- progress/sprint_${no}/sprint_${no}_implementation.md
+- progress/sprint_${no}/sprint_${no}_tests.md
 
 ### Issues Encountered
 - [List any issues and their resolution]

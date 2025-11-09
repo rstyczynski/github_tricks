@@ -11,7 +11,7 @@ Experimenting with GitHub workflows to validate its behavior.
 
 Project implements GitHub workflow. You are contracted to participate as an GitHub workflow Implementor within the Agentic Programming framework. Read this SRS.md and all referenced documents. Project scope is drafted in Backlog chapter. All other chapters and files are critical to understand the context.
 
-Follow `rules/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor. Especially notice chapter ownership rules and editing policies. You HAVE TO obey this document without exceptions.
+Follow `rules/github_actions/GitHub_DEV_RULES*` document for information about implementation process and the contract between the Product Owner and the Implementor. Especially notice chapter ownership rules and editing policies. You HAVE TO obey this document without exceptions.
 
 ### Tools and libraries
 
@@ -21,7 +21,7 @@ Follow `rules/GitHub_DEV_RULES*` document for information about implementation p
 
 ### Implementor's generated content
 
-The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/GENERAL_RULES*`.
+The Implementor is responsible for design and implementation notes. Has right to propose changes, and asks for clarification. Details of this ownership is explained in file `rules/generic/GENERAL_RULES*`.
 
 ## Backlog
 
@@ -134,3 +134,30 @@ Download artifacts produced by a workflow run using REST API. This feature enabl
 
 Delete artifacts from a workflow run using REST API. This feature enables cleanup of artifacts to manage repository storage and comply with retention policies. The implementation should handle authentication with token from `./secrets` directory, support deleting individual artifacts or all artifacts for a run, validate deletion permissions, and provide proper error handling for scenarios such as artifacts already deleted or insufficient permissions. API endpoint: `DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}`.
 
+### GH-26.1. Summarize: Trigger workflow via REST API
+
+Provide a concise summary and guide for triggering GitHub workflows using the REST API (POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches). Include usage purpose, supported parameters (workflow_id, inputs), required authentication, and invocation examples. This summary should be easy to update as trigger mechanisms evolve and serve as a quick reference for users and maintainers. Build new workflow for this task. Do not use existing one with custom WEBHOOK.
+
+### GH-26.2. Summarize: Correlate workflow runs via REST API
+
+Summarize how to correlate workflow runs using the REST API (GET /repos/{owner}/{repo}/actions/runs), describing how to identify runs by UUID, filter by workflow, branch, actor, and status, and handle pagination. Include invocation patterns, parameter options, and best practices for reliable correlations.
+
+### GH-26.3. Summarize: Retrieve workflow logs via REST API
+
+Document the process for retrieving workflow job logs via the REST API (GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs), with a summary of required authentication, log streaming, aggregation for multiple jobs, and error scenarios (logs not available, invalid job_id). Include usage examples and highlight best practices.
+
+### GH-26.4. Summarize: Manage workflow artifacts via REST API
+
+Provide a comprehensive guide summarizing all artifact management operations available via REST API, including listing artifacts (GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts), downloading artifacts (GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip), and deleting artifacts (DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}). For each, detail purpose, options, error handling, and best practices.
+
+### GH-26.5. Summarize: Manage pull requests via REST API
+
+Summarize all programmatic pull request operations provided via REST API, including creating pull requests (POST /repos/{owner}/{repo}/pulls), listing pull requests (GET /repos/{owner}/{repo}/pulls), updating pull requests (PATCH /repos/{owner}/{repo}/pulls/{pull_number}), merging pull requests (PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge), and handling PR comments (POST /repos/{owner}/{repo}/pulls/{pull_number}/comments). Each summary should cover usage scenario, primary parameters, invocation templates, and error cases.
+
+### GH-26.6. Auto-generate API operations summary
+
+Design and implement automation to generate or template the overall API operations summary based on the latest set of implemented Backlog Items. This ensures the API summary remains current with ongoing feature additions or changes, reducing manual maintenance and serving as an authoritative reference checklist. Build new workflows for summary generation; do not use any existing workflow with custom WEBHOOK triggers.
+
+### GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion
+
+Use already existing scripts to establish a sequence of script invocations.
