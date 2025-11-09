@@ -161,3 +161,306 @@ Design and implement automation to generate or template the overall API operatio
 ### GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion
 
 Use already existing scripts to establish a sequence of script invocations.
+
+### GH-28. Ansible role to handle GitHub workflow
+
+1. Ansible Role wrapper for:
+    * triggers workflow
+    * gets run_id using correlaiton_id added to the workflow name
+
+### GH-29. Design Ansible Collection to handle GitHub API
+
+**Note:** Analysis and design completed in Sprint 21. See `progress/sprint_21/sprint_21_analysis.md` and `progress/sprint_21/sprint_21_design.md`.
+
+**Market Analysis Finding:** No comprehensive GitHub API Ansible collection exists. community.general has only 5 basic modules (repo, webhook, issue, release) - ZERO modules for workflows, PRs, or artifacts.
+
+Ansible Collection design completed for: pull requests, comments, approvals, reviews, workflows, artifacts, logs. Design includes 12 modules, testing strategy (ansible-test), error handling framework, and authentication design.
+
+Implementation items created: GH-30 through GH-35.
+
+### GH-30. Ansible Collection - Infrastructure Setup
+
+**Prerequisites:** GH-29 design complete
+
+Create Ansible Collection infrastructure and bootstrap:
+
+1. **Collection Skeleton**
+   - Use `ansible-galaxy collection init rstyczynski.github_api`
+   - Set up directory structure per design
+   - Create galaxy.yml with metadata (namespace, version, dependencies)
+   - Create requirements.txt with Python dependencies (requests>=2.28.0, python-dateutil>=2.8.0, urllib3>=1.26.0)
+   - Set up .gitignore (.venv, *.pyc, __pycache__, etc.)
+
+2. **Development Environment**
+   - Create Python virtual environment (.venv in project directory per Ansible BP)
+   - Install Ansible Core >= 2.12.0
+   - Install ansible-test
+   - Install Python dependencies from requirements.txt
+
+3. **Testing Infrastructure**
+   - Create tests/sanity/ directory structure
+   - Create tests/unit/plugins/modules/ structure
+   - Create tests/integration/targets/ structure
+   - Configure ansible-test settings
+   - Create test fixtures and mocks
+
+4. **Shared Components**
+   - Implement `get_github_token()` helper (param > env > file precedence)
+   - Implement `github_api_call()` wrapper with comprehensive error handling
+   - Create error handling patterns (401/403/404/422/rate limit)
+   - Create module template for consistent structure
+
+5. **Documentation Framework**
+   - Create docs/ directory structure
+   - Create README.md template
+   - Set up module documentation pattern (DOCUMENTATION/EXAMPLES/RETURN)
+
+**Deliverables:**
+- Working collection skeleton
+- Shared helper functions tested
+- ansible-test sanity passes on skeleton
+- Development environment documented
+
+**Testing:**
+- Run `ansible-test sanity --docker default -v` - must pass
+- Verify virtual environment setup
+- Verify shared components unit tests pass
+
+### GH-31. Ansible Collection - Workflow Modules
+
+**Prerequisites:** GH-30 complete
+
+Implement GitHub Actions workflow management modules:
+
+1. **workflow_trigger.py**
+   - Trigger workflow_dispatch events
+   - Parameters: workflow (file), ref (branch), inputs (dict), correlation_id (optional UUID)
+   - API: POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
+   - Idempotent: NO (document clearly, creates new run each time)
+   - Returns: correlation_id, changed=true
+   - Full DOCUMENTATION/EXAMPLES/RETURN docstrings
+
+2. **workflow_status.py**
+   - Get workflow run status by correlation_id or run_id
+   - Parameters: correlation_id OR run_id, repository
+   - API: GET /repos/{owner}/{repo}/actions/runs (with filter)
+   - Idempotent: YES (read-only)
+   - Returns: run_id, status, conclusion, created_at, updated_at, html_url
+   - Support polling pattern with retries
+
+3. **workflow_cancel.py**
+   - Cancel workflow run
+   - Parameters: run_id, repository
+   - API: POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel
+   - Idempotent: YES (canceling already-canceled is no-op)
+   - Returns: changed (true if was running, false if already canceled/completed)
+
+4. **workflow_logs.py**
+   - Retrieve workflow execution logs
+   - Parameters: run_id, repository, dest (local path)
+   - API: GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs, GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs
+   - Idempotent: YES (read-only)
+   - Returns: logs_path, job_count
+
+**Deliverables:**
+- 4 workflow modules implemented
+- Each module with unit tests (mocked GitHub API)
+- Each module with integration tests
+- Each module passes ansible-test sanity/units
+- Documentation for all modules
+
+**Testing:**
+- Unit tests with mocked API responses
+- Integration tests against real GitHub API or VCR recordings
+- Idempotency tests (run twice, verify changed status)
+- Error scenario tests (auth failures, rate limits, not found)
+
+### GH-32. Ansible Collection - Pull Request Modules
+
+**Prerequisites:** GH-30 complete
+
+Implement GitHub Pull Request management modules:
+
+1. **pr_create.py**
+   - Create pull request with duplicate checking for idempotency
+   - Parameters: head (source branch), base (target branch), title, body, draft (optional)
+   - API: GET /repos/{owner}/{repo}/pulls (check existing), POST /repos/{owner}/{repo}/pulls
+   - Idempotent: YES (checks if PR with same head/base exists)
+   - Returns: changed, pr_number, pr_url, pr_state
+
+2. **pr_update.py**
+   - Update pull request properties
+   - Parameters: pr_number, title (optional), body (optional), state (optional), base (optional)
+   - API: GET /repos/{owner}/{repo}/pulls/{pull_number}, PATCH /repos/{owner}/{repo}/pulls/{pull_number}
+   - Idempotent: YES (compares current vs desired state)
+   - Returns: changed, pr_number, pr_url, updated_fields[]
+
+3. **pr_merge.py**
+   - Merge pull request
+   - Parameters: pr_number, merge_method (merge|squash|rebase), commit_title (optional), commit_message (optional)
+   - API: GET /repos/{owner}/{repo}/pulls/{pull_number}, PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge
+   - Idempotent: YES (checks if already merged)
+   - Returns: changed, merged (bool), sha (merge commit SHA)
+
+4. **pr_comment.py**
+   - Add comment to pull request
+   - Parameters: pr_number, body (comment text), force (default: false), path (optional), position (optional)
+   - API: POST /repos/{owner}/{repo}/issues/{issue_number}/comments OR POST /repos/{owner}/{repo}/pulls/{pull_number}/comments
+   - Idempotent: CONFIGURABLE (force param)
+   - Returns: changed, comment_id, comment_url
+
+5. **pr_review.py**
+   - Submit pull request review
+   - Parameters: pr_number, event (APPROVE|REQUEST_CHANGES|COMMENT), body (optional), force (required: true)
+   - API: POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews
+   - Idempotent: NO (requires force parameter)
+   - Returns: changed, review_id, review_state
+
+**Deliverables:**
+- 5 PR modules implemented
+- Each module with unit tests
+- Each module with integration tests
+- Each module passes ansible-test sanity/units
+- Documentation for all modules
+
+**Testing:**
+- Create/update/merge/comment/review workflow tests
+- Idempotency validation
+- Error handling (merge conflicts, permissions, validation errors)
+
+### GH-33. Ansible Collection - Artifact Modules
+
+**Prerequisites:** GH-30 complete
+
+Implement GitHub workflow artifact management modules:
+
+1. **artifact_list.py**
+   - List artifacts for workflow run
+   - Parameters: run_id, repository, name (optional filter)
+   - API: GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts
+   - Idempotent: YES (read-only)
+   - Returns: artifacts[] (id, name, size_in_bytes, created_at, expired)
+
+2. **artifact_download.py**
+   - Download workflow artifact
+   - Parameters: artifact_id, repository, dest (local path), extract (default: true)
+   - API: GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip
+   - Idempotent: YES (checks if already downloaded with matching checksum)
+   - Returns: changed (false if already downloaded), artifact_path, artifact_size
+
+3. **artifact_delete.py**
+   - Delete workflow artifact
+   - Parameters: artifact_id, repository
+   - API: DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}
+   - Idempotent: YES (404 on already-deleted is success)
+   - Returns: changed (false if already deleted)
+
+**Deliverables:**
+- 3 artifact modules implemented
+- Each module with unit tests
+- Each module with integration tests
+- Each module passes ansible-test sanity/units
+- Documentation for all modules
+
+**Testing:**
+- List/download/delete workflow tests
+- Large artifact handling
+- Expired artifact handling
+- Checksum validation for downloads
+
+### GH-34. Ansible Collection - Integration Tests and Validation
+
+**Prerequisites:** GH-31, GH-32, GH-33 complete (all modules implemented)
+
+Complete integration testing and collection validation:
+
+1. **ansible-test Integration**
+   - Create integration test targets for each module
+   - Test against real GitHub API (or VCR recordings)
+   - Test inter-module workflows (trigger → status → logs → artifacts)
+   - Test error scenarios across modules
+
+2. **End-to-End Scenarios**
+   - Complete workflow lifecycle (trigger → monitor → cancel)
+   - Complete PR lifecycle (create → comment → review → merge)
+   - Artifact management workflow (trigger → wait → list → download)
+
+3. **Collection Validation**
+   - Run `ansible-test sanity --docker default -v` on complete collection
+   - Run `ansible-test units --docker default -v` on all modules
+   - Run `ansible-test integration --docker default -v` on all targets
+   - Verify all tests pass
+
+4. **Performance Testing**
+   - Rate limit handling validation
+   - Large artifact download performance
+   - Pagination handling with many results
+
+**Deliverables:**
+- Complete integration test suite
+- All ansible-test validations passing
+- Performance benchmarks documented
+- Test coverage report
+
+**Testing:**
+- Full collection passes ansible-test sanity
+- Full collection passes ansible-test units
+- Full collection passes ansible-test integration
+- Code coverage > 80%
+
+### GH-35. Ansible Collection - Documentation and Examples
+
+**Prerequisites:** GH-34 complete (all modules tested and validated)
+
+Complete collection documentation and example playbooks:
+
+1. **Collection README.md**
+   - Getting started guide
+   - Installation instructions (ansible-galaxy collection install)
+   - Requirements (Python 3.8+, Ansible 2.12+, GitHub token with scopes)
+   - Quick examples for each module category
+   - Links to detailed documentation
+
+2. **Module Documentation Validation**
+   - Verify all modules have complete DOCUMENTATION strings
+   - Verify all modules have at least 3 EXAMPLES each
+   - Verify all modules have complete RETURN documentation
+   - Ensure documentation follows Ansible standards
+
+3. **Category Guides**
+   - Create docs/workflow_operations.md (complete workflow module guide)
+   - Create docs/pr_operations.md (complete PR module guide)
+   - Create docs/artifact_operations.md (complete artifact module guide)
+   - Include common patterns and best practices
+
+4. **Example Playbooks**
+   - Create docs/examples/trigger_workflow.yml
+   - Create docs/examples/create_pr.yml
+   - Create docs/examples/download_artifacts.yml
+   - Create docs/examples/pr_lifecycle.yml (create → review → merge)
+   - Create docs/examples/workflow_orchestration.yml (full workflow lifecycle)
+   - All examples must be tested and copy-paste-able
+
+5. **Development Documentation**
+   - Create CONTRIBUTING.md with development setup
+   - Document testing procedures
+   - Document release process
+   - Create developer guide for adding new modules
+
+6. **Publish Preparation**
+   - Prepare for Ansible Galaxy publication
+   - Create CHANGELOG.md
+   - Version tagging strategy
+   - License file (MIT per design)
+
+**Deliverables:**
+- Complete collection documentation
+- All example playbooks tested
+- Development guide
+- Ready for publication to Ansible Galaxy
+
+**Testing:**
+- All example playbooks execute successfully
+- Documentation generates correctly
+- ansible-galaxy collection build succeeds
+- Collection installable via ansible-galaxy
