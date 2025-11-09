@@ -180,12 +180,13 @@ Use already existing scripts to establish a sequence of script invocations.
 
 Ansible Collection design completed using gh CLI approach: 12 roles for workflows, PRs, and artifacts. Uses `gh` CLI utility instead of Python, significantly simpler implementation.
 
-Implementation items created: GH-30 through GH-33.
+Implementation items created: GH-29.1 through GH-29.4 (hierarchical family numbering).
 
 
-### GH-30. Ansible Collection - Infrastructure and Core Roles
+### GH-29.1. Ansible Collection - Infrastructure and Workflow Roles
 
 **Prerequisites:** GH-29 design v2 complete
+**Family:** Workflow operations
 
 Create Ansible Collection infrastructure using gh CLI approach and implement core roles:
 
@@ -231,9 +232,10 @@ Create Ansible Collection infrastructure using gh CLI approach and implement cor
 - Integration tests against GitHub test repository
 - Example playbooks execute successfully
 
-### GH-31. Ansible Collection - Pull Request Roles
+### GH-29.2. Ansible Collection - Pull Request Roles
 
-**Prerequisites:** GH-30 complete
+**Prerequisites:** GH-29.1 complete
+**Family:** Pull request operations
 
 Implement GitHub Pull Request management roles using gh CLI:
 
@@ -268,9 +270,10 @@ Implement GitHub Pull Request management roles using gh CLI:
 - Idempotency validation (run twice, verify changed status)
 - Comment and review functionality tests
 
-### GH-32. Ansible Collection - Artifact Roles and Documentation
+### GH-29.3. Ansible Collection - Artifact Roles and Documentation
 
-**Prerequisites:** GH-31 complete
+**Prerequisites:** GH-29.2 complete
+**Family:** Artifact operations
 
 Implement artifact management roles and complete collection documentation:
 
@@ -314,9 +317,10 @@ Implement artifact management roles and complete collection documentation:
 - ansible-galaxy collection build succeeds
 - Collection installable and usable
 
-### GH-33. Ansible Collection - Advanced Roles (Optional Future)
+### GH-29.4. Ansible Collection - Advanced Roles (Optional Future)
 
-**Prerequisites:** GH-32 complete
+**Prerequisites:** GH-29.3 complete
+**Family:** Advanced orchestration (optional)
 
 Optional advanced orchestration roles (future enhancement):
 

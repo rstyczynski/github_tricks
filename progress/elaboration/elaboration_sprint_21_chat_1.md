@@ -109,11 +109,12 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 **Iteration 5: Simplified Backlog Items (v2 - gh CLI)**
 - Replaced Python-focused items with gh CLI approach
-- Consolidated from 6 items to 4 items:
-  - GH-30: Infrastructure + 4 workflow roles
-  - GH-31: 5 PR roles
-  - GH-32: 3 artifact roles + documentation
-  - GH-33: Advanced roles (optional future)
+- Consolidated from 6 items to 4 items with hierarchical numbering:
+  - GH-29.1: Infrastructure + 4 workflow roles (Workflow family)
+  - GH-29.2: 5 PR roles (Pull request family)
+  - GH-29.3: 3 artifact roles + documentation (Artifact family)
+  - GH-29.4: Advanced roles (optional future) (Advanced orchestration family)
+- Hierarchical numbering keeps implementation families grouped under GH-29
 - Removed complex testing infrastructure items
 - Each role uses gh CLI commands, not Python modules
 
@@ -169,10 +170,10 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 4. **BACKLOG.md updates**
    - GH-29 updated (note analysis/design complete, v1/v2 evolution)
-   - GH-30: Infrastructure + 4 workflow roles (gh CLI)
-   - GH-31: 5 PR roles (gh CLI)
-   - GH-32: 3 artifact roles + documentation (gh CLI)
-   - GH-33: Advanced roles (optional future)
+   - GH-29.1: Infrastructure + 4 workflow roles (gh CLI) - Workflow family
+   - GH-29.2: 5 PR roles (gh CLI) - Pull request family
+   - GH-29.3: 3 artifact roles + documentation (gh CLI) - Artifact family
+   - GH-29.4: Advanced roles (optional future) - Advanced orchestration family
 
 5. **progress/elaboration/elaboration_sprint_21_chat_1.md** (this document)
 
@@ -180,7 +181,7 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 **Design Accepted - Ready for Construction**
 
-**Note**: This is a DESIGN sprint. Construction phase will NOT occur in Sprint 21. The "construction" for future sprints are the implementation items GH-30 through GH-35.
+**Note**: This is a DESIGN sprint. Construction phase will NOT occur in Sprint 21. The "construction" for future sprints are the implementation items GH-29.1 through GH-29.4.
 
 ## Next Steps
 
@@ -189,12 +190,10 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
    - Final summary report
 
 2. **Future Implementation** (separate sprints):
-   - Sprint for GH-30: Infrastructure Setup
-   - Sprint for GH-31: Workflow Modules
-   - Sprint for GH-32: Pull Request Modules
-   - Sprint for GH-33: Artifact Modules
-   - Sprint for GH-34: Integration Tests
-   - Sprint for GH-35: Documentation
+   - Sprint for GH-29.1: Infrastructure + Workflow Roles (Workflow family)
+   - Sprint for GH-29.2: Pull Request Roles (PR family)
+   - Sprint for GH-29.3: Artifact Roles + Documentation (Artifact family)
+   - Sprint for GH-29.4: Advanced Orchestration Roles (optional)
 
 ## Design Value Delivered
 
@@ -218,12 +217,14 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 **Implementation Roadmap:**
 - 4 clearly defined backlog items (simplified from 6)
-- GH-30: Infrastructure + core workflow roles
-- GH-31: PR management roles
-- GH-32: Artifact roles + complete documentation
-- GH-33: Optional advanced orchestration (future)
+- Hierarchical family numbering under GH-29:
+  - GH-29.1: Infrastructure + workflow roles (Workflow family)
+  - GH-29.2: PR management roles (Pull request family)
+  - GH-29.3: Artifact roles + documentation (Artifact family)
+  - GH-29.4: Optional advanced orchestration (Advanced family)
 - Each with deliverables, testing criteria, prerequisites
 - Phased approach manages risk
+- Clear family groupings for related functionality
 
 **Foundation Established:**
 - 20 sprints of GitHub API knowledge
