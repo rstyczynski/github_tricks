@@ -183,155 +183,724 @@ Ansible Collection design completed using gh CLI approach: 12 roles for workflow
 Implementation items created: GH-29.1 through GH-29.4 (hierarchical family numbering).
 
 
-### GH-29.1. Ansible Collection - Infrastructure and Workflow Roles
+
+### GH-29.1. Ansible Collection - Infrastructure Setup
 
 **Prerequisites:** GH-29 design v2 complete
-**Family:** Workflow operations
+**Family:** Infrastructure (Foundation)
 
-Create Ansible Collection infrastructure using gh CLI approach and implement core roles:
+Create Ansible Collection infrastructure:
 
 1. **Collection Skeleton**
    - Use `ansible-galaxy collection init rstyczynski.github_api`
    - Set up directory structure for roles
-   - Create galaxy.yml (namespace: rstyczynski, name: github_api)
+   - Create galaxy.yml (namespace: rstyczynski, name: github_api, version: 0.1.0)
    - Create collection README.md
    - Set up .gitignore
 
 2. **Prerequisites and Setup**
    - Document gh CLI installation (>= 2.0.0)
-   - Document authentication (GH_TOKEN or gh auth login)
+   - Document authentication (GH_TOKEN or gh auth login or ./secrets/github_token)
    - Create test repository setup guide
    - Document Ansible requirements (>= 2.12)
 
-3. **Core Workflow Roles (4 roles)**
-   - `workflow_trigger`: Trigger workflow using `gh workflow run`
-   - `workflow_status`: Get status using `gh run view` with correlation
-   - `workflow_cancel`: Cancel using `gh run cancel`
-   - `workflow_logs`: Download logs using `gh run view --log`
+3. **Role Standards and Templates**
+   - Create role template with standard structure (tasks/main.yml, defaults/main.yml, README.md)
+   - Document consistent parameter naming (prefixed with role name)
+   - Create standard error handling pattern for gh CLI calls
+   - Create authentication lookup pattern (GH_TOKEN > ./secrets/github_token)
+   - Create JSON parsing examples
 
-4. **Role Standards**
-   - Each role has tasks/main.yml, defaults/main.yml, README.md
-   - Consistent parameter naming (prefixed with role name)
-   - Standard error handling pattern for gh CLI calls
-   - Authentication via GH_TOKEN or ./secrets/github_token
-   - JSON output parsing using from_json filter
-
-5. **Testing Infrastructure**
+4. **Testing Infrastructure**
    - Create tests/integration/ structure
-   - Create test playbooks for workflow roles
-   - Test against real GitHub test repository
+   - Create example test playbook template
+   - Document testing approach
 
 **Deliverables:**
-- Working collection with 4 workflow roles
-- Each role tested and documented
-- Collection README with examples
-- Installation and setup guide
+- Working collection skeleton
+- Role template and standards documented
+- Development environment setup guide
+- Ready for role implementation
 
 **Testing:**
-- Each role passes idempotency test
-- Integration tests against GitHub test repository
-- Example playbooks execute successfully
+- Verify gh CLI available and authenticated
+- ansible-galaxy collection build succeeds
+- Template role can be instantiated
 
-### GH-29.2. Ansible Collection - Pull Request Roles
+---
+
+### GH-29.1.1. workflow_trigger Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Workflow operations
+
+Implement role to trigger GitHub workflows via gh CLI.
+
+**Role Specification:**
+- **Name**: workflow_trigger
+- **Purpose**: Trigger GitHub workflow using `gh workflow run`
+- **Idempotent**: NO (creates new run each time) - document clearly
+
+**Parameters** (defaults/main.yml):
+```yaml
+workflow_trigger_repository: ""         # Required: owner/repo
+workflow_trigger_workflow: ""           # Required: workflow file name
+workflow_trigger_ref: "main"            # Optional: branch/tag
+workflow_trigger_inputs: {}             # Optional: workflow inputs dict
+workflow_trigger_correlation_id: ""     # Optional: UUID (auto-generated)
+```
+
+**gh Command**:
+```bash
+gh workflow run {{ workflow_trigger_workflow }} \
+  --repo {{ workflow_trigger_repository }} \
+  --ref {{ workflow_trigger_ref }} \
+  {% for key, value in workflow_trigger_inputs.items() %}
+  -f {{ key }}={{ value }} \
+  {% endfor %}
+  -f correlation_id={{ workflow_trigger_correlation_id }}
+```
+
+**Returns** (set_fact):
+```yaml
+workflow_triggered: true
+workflow_correlation_id: "<uuid>"
+workflow_repository: "<owner/repo>"
+```
+
+**Deliverables:**
+- tasks/main.yml with trigger logic
+- defaults/main.yml with parameters
+- README.md with usage examples
+- Integration test playbook
+
+**Testing:**
+- Trigger workflow successfully
+- Correlation ID generated/used
+- Inputs passed correctly
+- Error handling (auth, invalid workflow)
+
+---
+
+### GH-29.1.2. workflow_status Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Workflow operations
+
+Implement role to get workflow run status.
+
+**Role Specification:**
+- **Name**: workflow_status
+- **Purpose**: Get workflow run status by correlation_id or run_id
+- **Idempotent**: YES (read-only)
+
+**Parameters**:
+```yaml
+workflow_status_repository: ""          # Required: owner/repo
+workflow_status_correlation_id: ""      # Optional: correlation UUID
+workflow_status_run_id: ""              # Optional: run ID
+workflow_status_timeout: 300            # Optional: max wait seconds
+workflow_status_poll_interval: 10       # Optional: poll every N seconds
+```
+
+**gh Commands**:
+```bash
+# Find by correlation_id
+gh run list --repo {{ repository }} \
+  --json databaseId,displayTitle,status,conclusion \
+  --jq '.[] | select(.displayTitle | contains("{{ correlation_id }}"))'
+
+# Or get specific run_id
+gh run view {{ run_id }} --repo {{ repository }} \
+  --json status,conclusion,createdAt,updatedAt,url
+```
+
+**Returns**:
+```yaml
+workflow_run_id: 123456789
+workflow_status: "completed|in_progress|queued"
+workflow_conclusion: "success|failure|cancelled|null"
+workflow_url: "https://github.com/..."
+```
+
+**Deliverables:**
+- Correlation-based lookup
+- Direct run_id lookup
+- Optional polling with timeout
+- README with examples
+
+**Testing:**
+- Find by correlation_id
+- Find by run_id
+- Polling until completion
+- Timeout handling
+
+---
+
+### GH-29.1.3. workflow_cancel Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Workflow operations
+
+Implement role to cancel workflow runs.
+
+**Role Specification:**
+- **Name**: workflow_cancel
+- **Purpose**: Cancel workflow run
+- **Idempotent**: YES (canceling already-cancelled is no-op)
+
+**Parameters**:
+```yaml
+workflow_cancel_repository: ""          # Required: owner/repo
+workflow_cancel_run_id: ""              # Required: run ID
+```
+
+**gh Commands**:
+```bash
+# Check status first
+gh run view {{ run_id }} --repo {{ repository }} --json status,conclusion
+
+# Cancel if still running
+gh run cancel {{ run_id }} --repo {{ repository }}
+```
+
+**Returns**:
+```yaml
+workflow_cancelled: true|false          # true if was running, false if already done
+workflow_final_status: "cancelled|completed"
+```
+
+**Deliverables:**
+- Idempotency check (skip if already cancelled/completed)
+- README with examples
+
+**Testing:**
+- Cancel running workflow
+- Attempt to cancel completed workflow (should be idempotent)
+- Attempt to cancel already-cancelled (should be idempotent)
+
+---
+
+### GH-29.1.4. workflow_logs Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Workflow operations
+
+Implement role to download workflow logs.
+
+**Role Specification:**
+- **Name**: workflow_logs
+- **Purpose**: Download workflow execution logs
+- **Idempotent**: YES (read-only, can re-download)
+
+**Parameters**:
+```yaml
+workflow_logs_repository: ""            # Required: owner/repo
+workflow_logs_run_id: ""                # Required: run ID
+workflow_logs_dest: "./logs"            # Optional: destination directory
+```
+
+**gh Command**:
+```bash
+gh run view {{ run_id }} --repo {{ repository }} --log > {{ dest }}/{{ run_id }}.log
+```
+
+**Returns**:
+```yaml
+workflow_logs_path: "./logs/123456789.log"
+workflow_logs_size: 12345
+```
+
+**Deliverables:**
+- Log download to specified directory
+- File size reporting
+- README with examples
+
+**Testing:**
+- Download logs from completed workflow
+- Verify file created
+- Re-download (idempotency)
+
+---
+
+### GH-29.2.1. pr_create Role
 
 **Prerequisites:** GH-29.1 complete
 **Family:** Pull request operations
 
-Implement GitHub Pull Request management roles using gh CLI:
+Implement role to create pull requests with duplicate checking.
 
-1. **PR Management Roles (5 roles)**
-   - `pr_create`: Create PR using `gh pr create` with duplicate checking
-   - `pr_update`: Update PR using `gh pr edit`
-   - `pr_merge`: Merge PR using `gh pr merge` with idempotency check
-   - `pr_comment`: Add comments using `gh pr comment`
-   - `pr_review`: Submit reviews using `gh pr review`
+**Role Specification:**
+- **Name**: pr_create
+- **Purpose**: Create pull request with idempotency via duplicate checking
+- **Idempotent**: YES (checks for existing PR with same head/base)
 
-2. **Idempotency Patterns**
-   - pr_create: Check existing with `gh pr list --head --base`
-   - pr_update: Query current state with `gh pr view`, compare, update if different
-   - pr_merge: Check if merged with `gh pr view --json state,merged`
-   - pr_comment: Configurable with force parameter
-   - pr_review: Not idempotent, requires explicit force
+**Parameters**:
+```yaml
+pr_create_repository: ""                # Required: owner/repo
+pr_create_head: ""                      # Required: source branch
+pr_create_base: "main"                  # Required: target branch
+pr_create_title: ""                     # Required: PR title
+pr_create_body: ""                      # Optional: PR description
+pr_create_draft: false                  # Optional: create as draft
+```
 
-3. **JSON Parsing**
-   - Use `gh pr list --json` for queries
-   - Use `gh pr view --json` for state checking
-   - Parse with Ansible from_json filter
-   - Set facts for downstream use
+**gh Commands**:
+```bash
+# Check if PR exists
+gh pr list --repo {{ repository }} \
+  --head {{ head }} --base {{ base }} --json number,state
+
+# Create if not exists
+gh pr create --repo {{ repository }} \
+  --head {{ head }} --base {{ base }} \
+  --title "{{ title }}" --body "{{ body }}" \
+  {% if draft %}--draft{% endif %}
+```
+
+**Returns**:
+```yaml
+pr_created: true|false                  # true if created, false if exists
+pr_number: 123
+pr_url: "https://github.com/..."
+pr_state: "open"
+```
 
 **Deliverables:**
-- 5 PR management roles implemented
-- Each role with idempotency handling
-- Each role documented with examples
-- Integration tests for PR lifecycle
+- Duplicate checking logic
+- Draft PR support
+- README with examples
 
 **Testing:**
-- Create → update → merge workflow test
-- Idempotency validation (run twice, verify changed status)
-- Comment and review functionality tests
+- Create new PR
+- Attempt to create duplicate (should be idempotent)
+- Create draft PR
 
-### GH-29.3. Ansible Collection - Artifact Roles and Documentation
+---
 
-**Prerequisites:** GH-29.2 complete
+### GH-29.2.2. pr_update Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Pull request operations
+
+Implement role to update pull request properties.
+
+**Role Specification:**
+- **Name**: pr_update
+- **Purpose**: Update PR title, body, or base branch
+- **Idempotent**: YES (compares current vs desired state)
+
+**Parameters**:
+```yaml
+pr_update_repository: ""                # Required: owner/repo
+pr_update_number: 0                     # Required: PR number
+pr_update_title: ""                     # Optional: new title
+pr_update_body: ""                      # Optional: new body
+pr_update_base: ""                      # Optional: new base branch
+```
+
+**gh Commands**:
+```bash
+# Get current state
+gh pr view {{ number }} --repo {{ repository }} \
+  --json title,body,baseRefName
+
+# Update if different
+gh pr edit {{ number }} --repo {{ repository }} \
+  {% if title %}--title "{{ title }}"{% endif %} \
+  {% if body %}--body "{{ body }}"{% endif %} \
+  {% if base %}--base {{ base }}{% endif %}
+```
+
+**Returns**:
+```yaml
+pr_updated: true|false                  # true if changed, false if same
+pr_changes: ["title", "body"]           # list of changed fields
+```
+
+**Deliverables:**
+- State comparison logic
+- Selective updates (only change what's different)
+- README with examples
+
+**Testing:**
+- Update title only
+- Update multiple fields
+- Attempt update with same values (should be idempotent)
+
+---
+
+### GH-29.2.3. pr_merge Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Pull request operations
+
+Implement role to merge pull requests.
+
+**Role Specification:**
+- **Name**: pr_merge
+- **Purpose**: Merge pull request with strategy selection
+- **Idempotent**: YES (checks if already merged)
+
+**Parameters**:
+```yaml
+pr_merge_repository: ""                 # Required: owner/repo
+pr_merge_number: 0                      # Required: PR number
+pr_merge_method: "merge"                # Optional: merge|squash|rebase
+pr_merge_title: ""                      # Optional: commit title
+pr_merge_message: ""                    # Optional: commit message
+```
+
+**gh Commands**:
+```bash
+# Check if already merged
+gh pr view {{ number }} --repo {{ repository }} --json state,merged
+
+# Merge if open
+gh pr merge {{ number }} --repo {{ repository }} \
+  --{{ method }} \
+  {% if title %}--subject "{{ title }}"{% endif %} \
+  {% if message %}--body "{{ message }}"{% endif %}
+```
+
+**Returns**:
+```yaml
+pr_merged: true|false                   # true if merged, false if already merged
+pr_merge_commit: "abc123..."
+pr_merge_method_used: "merge|squash|rebase"
+```
+
+**Deliverables:**
+- Merge strategy support (merge, squash, rebase)
+- Already-merged check
+- README with examples
+
+**Testing:**
+- Merge with each strategy
+- Attempt to merge already-merged PR (should be idempotent)
+- Custom commit message
+
+---
+
+### GH-29.2.4. pr_comment Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Pull request operations
+
+Implement role to add comments to pull requests.
+
+**Role Specification:**
+- **Name**: pr_comment
+- **Purpose**: Add comment to PR
+- **Idempotent**: CONFIGURABLE (force parameter)
+
+**Parameters**:
+```yaml
+pr_comment_repository: ""               # Required: owner/repo
+pr_comment_number: 0                    # Required: PR number
+pr_comment_body: ""                     # Required: comment text
+pr_comment_force: false                 # Optional: always add even if duplicate
+```
+
+**gh Command**:
+```bash
+gh pr comment {{ number }} --repo {{ repository }} --body "{{ body }}"
+```
+
+**Returns**:
+```yaml
+pr_comment_added: true
+pr_comment_url: "https://github.com/..."
+```
+
+**Deliverables:**
+- Comment addition
+- Optional force parameter
+- README with examples
+
+**Testing:**
+- Add comment to PR
+- Test with force=true (always add)
+- Test with force=false (optional duplicate checking)
+
+---
+
+### GH-29.2.5. pr_review Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Pull request operations
+
+Implement role to submit pull request reviews.
+
+**Role Specification:**
+- **Name**: pr_review
+- **Purpose**: Submit PR review (approve, request changes, comment)
+- **Idempotent**: NO (each review is distinct)
+
+**Parameters**:
+```yaml
+pr_review_repository: ""                # Required: owner/repo
+pr_review_number: 0                     # Required: PR number
+pr_review_action: ""                    # Required: approve|request-changes|comment
+pr_review_body: ""                      # Optional: review comment
+```
+
+**gh Command**:
+```bash
+gh pr review {{ number }} --repo {{ repository }} \
+  --{{ action }} \
+  {% if body %}--body "{{ body }}"{% endif %}
+```
+
+**Returns**:
+```yaml
+pr_review_submitted: true
+pr_review_state: "APPROVED|CHANGES_REQUESTED|COMMENTED"
+```
+
+**Deliverables:**
+- Review submission (all 3 types)
+- README with examples and non-idempotent warning
+
+**Testing:**
+- Submit approval
+- Submit request-changes
+- Submit comment review
+
+---
+
+### GH-29.3.1. artifact_list Role
+
+**Prerequisites:** GH-29.1 complete
 **Family:** Artifact operations
 
-Implement artifact management roles and complete collection documentation:
+Implement role to list workflow artifacts.
 
-1. **Artifact Management Roles (3 roles)**
-   - `artifact_list`: List using `gh api /repos/.../artifacts`
-   - `artifact_download`: Download using `gh api ... > file` with checksum validation
-   - `artifact_delete`: Delete using `gh api -X DELETE`
+**Role Specification:**
+- **Name**: artifact_list
+- **Purpose**: List artifacts for a workflow run
+- **Idempotent**: YES (read-only)
 
-2. **Complete Integration Tests**
-   - End-to-end workflow: trigger → status → logs → artifacts
-   - End-to-end PR: create → comment → review → merge
-   - Idempotency tests for all 12 roles
-   - Error handling tests (auth, not found, rate limit)
+**Parameters**:
+```yaml
+artifact_list_repository: ""            # Required: owner/repo
+artifact_list_run_id: ""                # Required: run ID
+artifact_list_name: ""                  # Optional: filter by name
+```
 
-3. **Documentation**
-   - Collection README with getting started
-   - Individual role READMEs with examples
-   - Category guides (workflows, PRs, artifacts)
-   - Example playbooks (tested and copy-paste-able):
-     - trigger_workflow.yml
-     - create_pr.yml
-     - download_artifacts.yml
-     - pr_lifecycle.yml
-     - workflow_orchestration.yml
+**gh Command**:
+```bash
+gh api /repos/{{ owner }}/{{ repo }}/actions/runs/{{ run_id }}/artifacts \
+  --jq '.artifacts[] | {id, name, size_in_bytes, created_at, expired}'
+```
 
-4. **Publication Preparation**
-   - CHANGELOG.md
-   - LICENSE (MIT)
-   - Version tagging (0.1.0)
-   - ansible-galaxy collection build
+**Returns**:
+```yaml
+artifacts:
+  - id: 123
+    name: "build-output"
+    size_in_bytes: 1024
+    created_at: "2025-01-01T00:00:00Z"
+    expired: false
+```
 
 **Deliverables:**
-- 3 artifact roles implemented
-- Complete test suite passing
-- Complete documentation
-- Collection ready for publication to Ansible Galaxy
+- List all artifacts for run
+- Optional name filtering
+- README with examples
 
 **Testing:**
-- All 12 roles pass integration tests
+- List artifacts from workflow run
+- Filter by name
+- Handle run with no artifacts
+
+---
+
+### GH-29.3.2. artifact_download Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Artifact operations
+
+Implement role to download workflow artifacts.
+
+**Role Specification:**
+- **Name**: artifact_download
+- **Purpose**: Download artifact zip file
+- **Idempotent**: YES (checks if already downloaded with matching checksum)
+
+**Parameters**:
+```yaml
+artifact_download_repository: ""        # Required: owner/repo
+artifact_download_id: ""                # Required: artifact ID
+artifact_download_dest: "./artifacts"   # Optional: destination directory
+artifact_download_extract: true         # Optional: extract zip
+```
+
+**gh Commands**:
+```bash
+# Download
+gh api /repos/{{ owner }}/{{ repo }}/actions/artifacts/{{ id }}/zip \
+  > {{ dest }}/artifact-{{ id }}.zip
+
+# Extract if requested
+unzip {{ dest }}/artifact-{{ id }}.zip -d {{ dest }}/artifact-{{ id }}/
+```
+
+**Returns**:
+```yaml
+artifact_downloaded: true|false         # false if already exists
+artifact_path: "./artifacts/artifact-123"
+artifact_size: 1024
+```
+
+**Deliverables:**
+- Download artifact
+- Optional extraction
+- Checksum validation for idempotency
+- README with examples
+
+**Testing:**
+- Download and extract artifact
+- Re-download (should be idempotent)
+- Download without extraction
+
+---
+
+### GH-29.3.3. artifact_delete Role
+
+**Prerequisites:** GH-29.1 complete
+**Family:** Artifact operations
+
+Implement role to delete workflow artifacts.
+
+**Role Specification:**
+- **Name**: artifact_delete
+- **Purpose**: Delete artifact
+- **Idempotent**: YES (404 on already-deleted is success)
+
+**Parameters**:
+```yaml
+artifact_delete_repository: ""          # Required: owner/repo
+artifact_delete_id: ""                  # Required: artifact ID
+```
+
+**gh Command**:
+```bash
+gh api -X DELETE /repos/{{ owner }}/{{ repo }}/actions/artifacts/{{ id }}
+```
+
+**Returns**:
+```yaml
+artifact_deleted: true|false            # false if already deleted
+```
+
+**Deliverables:**
+- Delete artifact
+- Handle already-deleted (idempotent)
+- README with examples
+
+**Testing:**
+- Delete artifact
+- Attempt to delete already-deleted (should be idempotent)
+- Handle not-found gracefully
+
+---
+
+### GH-29.3.4. Collection Documentation
+
+**Prerequisites:** All roles (GH-29.1.1-4, GH-29.2.1-5, GH-29.3.1-3) complete
+**Family:** Documentation
+
+Complete collection documentation and example playbooks.
+
+**Deliverables:**
+
+1. **Collection README.md**
+   - Getting started guide
+   - Installation: `ansible-galaxy collection install rstyczynski.github_api`
+   - Requirements (gh CLI >= 2.0.0, Ansible >= 2.12, GitHub token)
+   - Quick examples for each role family
+   - Links to role documentation
+
+2. **Example Playbooks** (playbooks/ directory)
+   - `trigger_workflow.yml`: Trigger and monitor workflow
+   - `create_pr.yml`: Create PR with review
+   - `download_artifacts.yml`: List and download artifacts
+   - `pr_lifecycle.yml`: Complete PR workflow (create → review → merge)
+   - `workflow_orchestration.yml`: Full workflow lifecycle
+   - All examples tested and copy-paste-able
+
+3. **Category Guides** (docs/ directory)
+   - `workflow_operations.md`: Complete guide to workflow roles
+   - `pr_operations.md`: Complete guide to PR roles
+   - `artifact_operations.md`: Complete guide to artifact roles
+   - Common patterns and best practices
+
+4. **Publishing**
+   - CHANGELOG.md (version 0.1.0)
+   - LICENSE (MIT)
+   - ansible-galaxy collection build
+   - Test installation from built tarball
+
+**Testing:**
 - All example playbooks execute successfully
 - ansible-galaxy collection build succeeds
-- Collection installable and usable
+- Collection installable: `ansible-galaxy collection install rstyczynski-github_api-0.1.0.tar.gz`
+- Documentation renders correctly
 
-### GH-29.4. Ansible Collection - Advanced Roles (Optional Future)
+---
 
-**Prerequisites:** GH-29.3 complete
-**Family:** Advanced orchestration (optional)
+### GH-29.4.1. workflow_orchestrator Role (Optional)
 
-Optional advanced orchestration roles (future enhancement):
+**Prerequisites:** GH-29.3.4 complete
+**Family:** Advanced orchestration
 
-1. **High-Level Orchestration Roles**
-   - `workflow_orchestrator`: Complete workflow lifecycle (trigger → monitor → logs → artifacts)
-   - `pr_lifecycle`: Complete PR workflow (create → review → merge with checks)
-   - `release_manager`: Tag → build → test → release workflow
+High-level role that orchestrates complete workflow lifecycle.
 
-2. **Utility Roles**
-   - `github_auth_check`: Verify gh CLI authentication and permissions
-   - `github_repository_info`: Query repository details
-   - `github_rate_limit_check`: Check API rate limit status
+**Purpose**: Trigger → monitor → logs → artifacts in single role invocation.
 
-**Note:** This is optional/future work. GH-30 through GH-32 deliver complete functional collection.
+**Parameters**:
+```yaml
+workflow_orch_repository: ""
+workflow_orch_workflow: ""
+workflow_orch_inputs: {}
+workflow_orch_download_logs: true
+workflow_orch_download_artifacts: true
+workflow_orch_timeout: 600
+```
+
+**Uses Roles**:
+- workflow_trigger
+- workflow_status (with polling)
+- workflow_logs (if requested)
+- artifact_list + artifact_download (if requested)
+
+**Note**: Optional future enhancement.
+
+---
+
+### GH-29.4.2. pr_lifecycle Role (Optional)
+
+**Prerequisites:** GH-29.3.4 complete
+**Family:** Advanced orchestration
+
+High-level role for complete PR workflow.
+
+**Purpose**: Create → wait for review → merge in single role invocation.
+
+**Parameters**:
+```yaml
+pr_lifecycle_repository: ""
+pr_lifecycle_head: ""
+pr_lifecycle_base: "main"
+pr_lifecycle_title: ""
+pr_lifecycle_auto_merge: false
+pr_lifecycle_merge_method: "merge"
+```
+
+**Uses Roles**:
+- pr_create
+- pr_update (optional)
+- pr_merge (if auto_merge=true after checks pass)
+
+**Note**: Optional future enhancement.

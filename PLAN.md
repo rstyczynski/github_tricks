@@ -252,3 +252,12 @@ Backlog Items:
 * GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion
 
 Use already existing scripts to establish a sequence of script invocations. Provide parameters: string and number, and return in artifacts array of string with the provided length.
+
+## Sprint 21
+
+Status: Progress
+Mode: managed
+
+Backlog Items:
+
+* GH-29. Design Ansible Collection to handle GitHub API

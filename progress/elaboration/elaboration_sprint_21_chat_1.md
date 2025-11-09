@@ -118,6 +118,24 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 - Removed complex testing infrastructure items
 - Each role uses gh CLI commands, not Python modules
 
+**Iteration 6: Per-Role Granularity**
+- **Product Owner request**: "split it further. one PBI per role."
+- **Rationale**: Finer-grained development control, easier sprint planning
+- **Result**: Split 4 family items into 14 individual role items:
+  - **Infrastructure**: GH-29.1 (collection skeleton, standards, templates)
+  - **Workflow family (4 roles)**: GH-29.1.1-4 (trigger, status, cancel, logs)
+  - **Pull request family (5 roles)**: GH-29.2.1-5 (create, update, merge, comment, review)
+  - **Artifact family (3 roles + docs)**: GH-29.3.1-4 (list, download, delete, documentation)
+  - **Advanced family (2 optional roles)**: GH-29.4.1-2 (workflow orchestrator, PR lifecycle)
+- Each role item includes:
+  - Prerequisites and family label
+  - Complete role specification (purpose, idempotency status)
+  - Parameters with YAML examples
+  - gh CLI command templates
+  - Return values structure
+  - Deliverables (tasks, defaults, README, tests)
+  - Specific testing requirements
+
 ## Open Questions Resolved
 
 **Q1: Does comprehensive GitHub Ansible collection exist?**
@@ -170,10 +188,12 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 4. **BACKLOG.md updates**
    - GH-29 updated (note analysis/design complete, v1/v2 evolution)
-   - GH-29.1: Infrastructure + 4 workflow roles (gh CLI) - Workflow family
-   - GH-29.2: 5 PR roles (gh CLI) - Pull request family
-   - GH-29.3: 3 artifact roles + documentation (gh CLI) - Artifact family
-   - GH-29.4: Advanced roles (optional future) - Advanced orchestration family
+   - **Final structure**: 14 per-role backlog items:
+     - GH-29.1: Infrastructure setup (foundation)
+     - GH-29.1.1-4: Workflow roles (trigger, status, cancel, logs)
+     - GH-29.2.1-5: PR roles (create, update, merge, comment, review)
+     - GH-29.3.1-4: Artifact roles + docs (list, download, delete, documentation)
+     - GH-29.4.1-2: Advanced roles (workflow orchestrator, PR lifecycle) - optional
 
 5. **progress/elaboration/elaboration_sprint_21_chat_1.md** (this document)
 
@@ -181,7 +201,7 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 
 **Design Accepted - Ready for Construction**
 
-**Note**: This is a DESIGN sprint. Construction phase will NOT occur in Sprint 21. The "construction" for future sprints are the implementation items GH-29.1 through GH-29.4.
+**Note**: This is a DESIGN sprint. Construction phase will NOT occur in Sprint 21. The "construction" for future sprints are the implementation items GH-29.1 through GH-29.4.2.
 
 ## Next Steps
 
@@ -190,10 +210,11 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
    - Final summary report
 
 2. **Future Implementation** (separate sprints):
-   - Sprint for GH-29.1: Infrastructure + Workflow Roles (Workflow family)
-   - Sprint for GH-29.2: Pull Request Roles (PR family)
-   - Sprint for GH-29.3: Artifact Roles + Documentation (Artifact family)
-   - Sprint for GH-29.4: Advanced Orchestration Roles (optional)
+   - Sprint for GH-29.1: Infrastructure setup (collection skeleton, standards, testing foundation)
+   - Sprints for GH-29.1.1-4: Workflow roles (can be done individually or grouped)
+   - Sprints for GH-29.2.1-5: PR roles (can be done individually or grouped)
+   - Sprints for GH-29.3.1-4: Artifact roles + documentation (can be done individually or grouped)
+   - Sprints for GH-29.4.1-2: Advanced orchestration roles (optional future work)
 
 ## Design Value Delivered
 
@@ -216,15 +237,22 @@ Sprint 21 is a DESIGN-ONLY sprint. No code implementation - deliverables are:
 - **Maintainable**: gh CLI maintained by GitHub, not us
 
 **Implementation Roadmap:**
-- 4 clearly defined backlog items (simplified from 6)
-- Hierarchical family numbering under GH-29:
-  - GH-29.1: Infrastructure + workflow roles (Workflow family)
-  - GH-29.2: PR management roles (Pull request family)
-  - GH-29.3: Artifact roles + documentation (Artifact family)
-  - GH-29.4: Optional advanced orchestration (Advanced family)
-- Each with deliverables, testing criteria, prerequisites
+- 14 per-role backlog items (split from 4 family items for finer control)
+- Hierarchical numbering under GH-29:
+  - GH-29.1: Infrastructure setup (foundation)
+  - GH-29.1.1-4: Workflow roles (trigger, status, cancel, logs)
+  - GH-29.2.1-5: PR roles (create, update, merge, comment, review)
+  - GH-29.3.1-4: Artifact roles + docs (list, download, delete, documentation)
+  - GH-29.4.1-2: Advanced orchestration (workflow orchestrator, PR lifecycle) - optional
+- Each role with complete specification:
+  - Parameters (YAML examples)
+  - gh CLI commands
+  - Return values
+  - Deliverables (tasks, defaults, README, tests)
+  - Testing requirements
+- Flexible sprint planning: roles can be implemented individually or grouped by family
 - Phased approach manages risk
-- Clear family groupings for related functionality
+- Clear family groupings maintain logical organization
 
 **Foundation Established:**
 - 20 sprints of GitHub API knowledge
