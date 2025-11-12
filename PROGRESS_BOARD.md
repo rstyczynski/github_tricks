@@ -27,4 +27,4 @@ Progress board is a table showing sprint, and backlog items state. It's the only
 | Sprint 19 | implemented | GH-26.6. Auto-generate API operations summary | tested |
 | Sprint 20 | implemented | GH-27. Trigger long running workflow via REST API to download logs, and artifacts after completion | tested |
 | Sprint 21 | under_design | GH-29. Design Ansible Collection to handle GitHub API | designed |
-| Sprint 22 | under_design | GH-30. Prepare two slides with analysis is GitHub workflow may be used as backend to CLI running Ansible processes | designed |
+| Sprint 22 | implemented | GH-30. Prepare two slides with analysis is GitHub workflow may be used as backend to CLI running Ansible processes | tested |
