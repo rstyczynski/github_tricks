@@ -255,9 +255,18 @@ Use already existing scripts to establish a sequence of script invocations. Prov
 
 ## Sprint 21
 
-Status: Progress
+Status: Done
 Mode: managed
 
 Backlog Items:
 
 * GH-29. Design Ansible Collection to handle GitHub API
+
+## Sprint 22
+
+Status: Progress
+Mode: managed
+
+Backlog Items:
+
+* GH-30 Prepare two slides with analysis is GitHub workflow may be used as backend to CLI running Ansible processes

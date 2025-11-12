@@ -904,3 +904,7 @@ pr_lifecycle_merge_method: "merge"
 - pr_merge (if auto_merge=true after checks pass)
 
 **Note**: Optional future enhancement.
+
+### GH-30 Prepare two slides with analysis is GitHub workflow may be used as backend to CLI running Ansible processes
+
+Prepare two slides with analysis is GitHub workflow may be used as backend to CLI running Ansible processes. Enumerate pros ans cons. CLI is typically synchronous with expected rapid answer time.
