@@ -1,0 +1,1 @@
+../../sprint_22/GH-30_slides.md

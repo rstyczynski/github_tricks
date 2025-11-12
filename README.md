@@ -270,6 +270,8 @@ Each phase includes review loops ensuring quality and alignment. See [Product Ow
 
 **Current Status:**
 
+- Sprint 22: ✅ Done (GitHub Workflow as CLI Backend Analysis - GH-30)
+- Sprint 21: ✅ Done (Ansible Collection Design - GH-29)
 - Sprint 20: ✅ Done (End-to-End Orchestration - GH-27)
 - Sprint 19: ✅ Done (API Documentation Automation - GH-26.1 to GH-26.6)
 - Sprint 18: ✅ Done (Artifact Deletion - GH-25)
